@@ -13,3 +13,6 @@ echo "🌱 Seeding Demo Scenarios..."
 python scripts/seed_scenarios.py
 
 echo "✅ Release process complete!"
+
+echo "🚀 Starting Gunicorn Server..."
+exec gunicorn --bind 0.0.0.0:${PORT:-8000} config.wsgi:application
