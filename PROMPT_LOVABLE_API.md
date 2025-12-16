@@ -1,8 +1,6 @@
-# Prompt Lovable - Intégration API Succession Calculator
-
 ## Contexte
 
-Tu dois intégrer une API Django de calcul de succession française. L'API est accessible sur `https://[ton-domaine]/api/` (en local: `http://127.0.0.1:8000/api/`).
+Tu dois intégrer une API Django de calcul de succession française. L'API est accessible sur `https://legi-calculator-production.up.railway.app/api/` (en local: `http://127.0.0.1:8000/api/`).
 
 ---
 
@@ -18,7 +16,7 @@ Tu dois intégrer une API Django de calcul de succession française. L'API est a
 
 ### 3. GET `/api/docs/` - Documentation Swagger
 
-**Description**: Interface Swagger interactive pour tester l'API.
+**Description**: Interface Swagger interactive pour tester l'API: https://legi-calculator-production.up.railway.app/api/docs/
 
 ---
 
@@ -273,7 +271,7 @@ const simulateSuccession = async (simulationInput: SimulationInput) => {
   }
 
   // 2. Appel API avec le token
-  const response = await fetch('https://[ton-domaine]/api/v1/simulate/', {
+  const response = await fetch('https://legi-calculator-production.up.railway.app/api/v1/simulate/', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -367,4 +365,4 @@ Abattement de 20% si le conjoint survivant occupe le bien.
 
 ## URL Swagger
 
-Pour tester interactivement l'API: `http://127.0.0.1:8000/api/docs/`
+Pour tester interactivement l'API: `https://legi-calculator-production.up.railway.app/api/docs/`
