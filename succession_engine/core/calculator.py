@@ -24,7 +24,8 @@ from succession_engine.core.liquidation import MatrimonialLiquidator
 from succession_engine.core.estate import get_reportable_donations, reconstitute_estate
 from succession_engine.core.devolution import (
     calculate_legal_reserve, process_specific_bequests,
-    HeirShareCalculator, check_excessive_liberalities
+    HeirShareCalculator, check_excessive_liberalities,
+    calculate_droit_de_retour
 )
 
 
@@ -73,7 +74,7 @@ class SuccessionCalculator:
         # STEP 2: Reconstitution de la masse (Rapport civil - Art. 843+ CC)
         reportable_donations, reportable_donations_value = get_reportable_donations(input_data.donations)
         net_succession_assets, total_debts, debt_warnings = reconstitute_estate(
-            net_assets, reportable_donations_value, input_data.debts
+            net_assets, reportable_donations_value, input_data.debts, input_data.assets
         )
         # Phase 11: International Warnings
         warnings.extend(self._generate_international_warnings(input_data))
@@ -98,6 +99,21 @@ class SuccessionCalculator:
             description="Ajout des donations antérieures (rapport civil) et déduction des dettes.",
             result_summary=f"Actif net: {net_assets:,.2f}€ + {donation_summary}{debts_summary} = Masse: {net_succession_assets:,.2f}€"
         ))
+        
+        # Phase 16: Droit de Retour (Art 738-2 CC)
+        # Check if assets return to parents before reserve calculation
+        return_amounts, total_return, return_warnings = calculate_droit_de_retour(
+            input_data.assets, input_data.members, net_succession_assets
+        )
+        if total_return > 0:
+            net_succession_assets -= total_return
+            warnings.extend(return_warnings)
+            calculation_steps.append(CalculationStep(
+                step_number=2, # sub-step
+                step_name="Application Droit de Retour (Art. 738-2 CC)",
+                description="Les biens reçus par donation d'ascendants retournent à ces derniers (en l'absence de descendants).",
+                result_summary=f"Valeur retournée: {total_return:,.2f}€. Nouvelle masse: {net_succession_assets:,.2f}€"
+            ))
 
         # STEP 3: Détermination de la dévolution (Réserve & Quotité)
         heirs = input_data.members
@@ -367,20 +383,46 @@ class SuccessionCalculator:
                 premiums_before_70 = li_asset.premiums_before_70 or 0.0
                 premiums_after_70 = li_asset.premiums_after_70 or 0.0
                 
-                li_tax, li_details = LifeInsuranceCalculator.calculate_life_insurance_tax(
-                    premiums_before_70,
-                    premiums_after_70,
-                    beneficiary.relationship,
-                    num_beneficiaries_after_70=len(life_insurance_assets)
-                )
+                # Phase 15: Gestion des contrats spécifiques
+                from succession_engine.schemas import LifeInsuranceContractType
+                contract_type = getattr(li_asset, 'life_insurance_contract_type', LifeInsuranceContractType.STANDARD)
                 
-                life_insurance_total_tax += li_tax
-                
-                warnings.append(
-                    f"📋 Assurance-vie {li_asset.id}: {li_asset.estimated_value:,.0f}€ (hors succession) - "
-                    f"Droits: {li_tax:,.2f}€ "
-                    f"(primes avant 70 ans: {premiums_before_70:,.0f}€, après 70 ans: {premiums_after_70:,.0f}€)"
-                )
+                # Cas 1: Ancien Contrat (Exonéré)
+                if contract_type == LifeInsuranceContractType.ANCIEN_CONTRAT:
+                    li_tax = 0.0
+                    warnings.append(
+                        f"📜 Assurance-vie {li_asset.id}: Exonérée (Ancien contrat primes < 98 / souscrit < 91)."
+                    )
+                else:
+                    # Cas 2: Vie-Génération (-20% abattement sur l'assiette avant abattement fixe)
+                    # Note: Le LifeInsuranceCalculator standard ne gère pas ce paramètre pour l'instant.
+                    # On applique l'abattement manuellement ici sur les primes AVANT d'appeler le calculateur
+                    # assiette_taxable = valeur * 0.80
+                    
+                    adjusted_primes_before_70 = premiums_before_70
+                    
+                    if contract_type == LifeInsuranceContractType.VIE_GENERATION:
+                        # L'abattement de 20% s'applique sur le capital décès (donc primes + intérêts)
+                        # Ici on simplifie en l'appliquant aux primes déclarées (supposées être le capital)
+                        adjusted_primes_before_70 = premiums_before_70 * 0.80
+                    
+                    li_tax, li_details = LifeInsuranceCalculator.calculate_life_insurance_tax(
+                        adjusted_primes_before_70,
+                        premiums_after_70,
+                        beneficiary.relationship,
+                        num_beneficiaries_after_70=len(life_insurance_assets)
+                    )
+                    
+                    # Accumulate tax
+                    life_insurance_total_tax += li_tax
+                    
+                    details_str = f"primes avant 70 ans: {premiums_before_70:,.0f}€ -> Base Taxable: {adjusted_primes_before_70:,.0f}€" if contract_type == LifeInsuranceContractType.VIE_GENERATION else f"primes avant 70 ans: {premiums_before_70:,.0f}€"
+                    
+                    warnings.append(
+                        f"📋 Assurance-vie {li_asset.id} ({contract_type.value}): "
+                        f"Droits: {li_tax:,.2f}€ "
+                        f"({details_str}, après 70 ans: {premiums_after_70:,.0f}€)"
+                    )
         
         calculation_steps.append(CalculationStep(
             step_number=5,

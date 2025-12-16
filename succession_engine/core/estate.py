@@ -11,6 +11,7 @@ Responsibilities:
 """
 
 from typing import List, Dict, Tuple
+from succession_engine.schemas import Asset, ExemptionType
 
 
 def get_reportable_donations(donations: List) -> Tuple[List[Dict], float]:
@@ -51,8 +52,9 @@ def get_reportable_donations(donations: List) -> Tuple[List[Dict], float]:
 def reconstitute_estate(
     net_assets: float,
     reportable_donations_value: float = 0.0,
-    debts: List = None
-) -> Tuple[float, float]:
+    debts: List = None,
+    assets: List[Asset] = None
+) -> Tuple[float, float, List[str]]:
     """
     Reconstitute estate (Masse successorale).
     
@@ -65,9 +67,10 @@ def reconstitute_estate(
         net_assets: Net assets from matrimonial liquidation
         reportable_donations_value: Total value of reportable donations
         debts: List of Debt schema objects
+        assets: List of Assets (needed for Art. 769 CGI check)
         
     Returns:
-        Tuple of (net succession assets, total deductible debts)
+        Tuple of (net succession assets, total deductible debts, warnings)
     """
     total_deductible_debts = 0.0
     debt_warnings = []
@@ -80,6 +83,22 @@ def reconstitute_estate(
             if debt.is_deductible:
                 amount_to_deduct = debt.amount
                 
+                # Check for linked asset partial exemption (Art. 769 CGI)
+                # "Les dettes contractées pour l'acquisition ou la conservation des biens 
+                # sont déductibles dans les mêmes proportions que les biens auxquels elles se rapportent."
+                if debt.linked_asset_id and assets:
+                    linked_asset = next((a for a in assets if a.id == debt.linked_asset_id), None)
+                    if linked_asset and linked_asset.professional_exemption:
+                        ex_type = linked_asset.professional_exemption.exemption_type
+                        if ex_type in [ExemptionType.DUTREIL, ExemptionType.FORESTRY, ExemptionType.RURAL_LEASE]:
+                            # Exonération de 75% => Déductibilité de 25%
+                            # Note: Simplification, certains ruraux sont à 50%, mais Dutreil/Forêt majo = 75%
+                            amount_to_deduct = amount_to_deduct * 0.25
+                            debt_warnings.append(
+                                f"⚠️ Dette '{debt.description or debt.id}' plafonnée à 25% "
+                                f"car liée à un bien partiellement exonéré ({linked_asset.id}). (Art. 769 CGI)"
+                            )
+
                 # Plafonnement frais funéraires (Art. 775 CGI)
                 if debt.debt_type == "FUNERAL":
                     if amount_to_deduct > MAX_FUNERAL_DEDUCTION and not getattr(debt, 'proof_provided', False):
@@ -90,7 +109,6 @@ def reconstitute_estate(
                             f"(montant déclaré : {debt.amount}€)."
                         )
                     elif amount_to_deduct > MAX_FUNERAL_DEDUCTION:
-                        # Proof provided implies we accept the amount, but still helpful to warn/log
                         debt_warnings.append(
                             f"ℹ️ Frais funéraires supérieurs au plafond légal ({MAX_FUNERAL_DEDUCTION}€) "
                             f"acceptés sur justificatifs (montant : {debt.amount}€)."
@@ -98,22 +116,11 @@ def reconstitute_estate(
                         
                 total_deductible_debts += amount_to_deduct
             else:
-                # Warning for non-deductible debts just in case use meant to deduct them
                 if getattr(debt, 'proof_provided', False):
                      debt_warnings.append(
                         f"⚠️ La dette '{debt.description or debt.id}' a un justificatif mais est marquée non déductible."
                      )
     
     net_succession_assets = net_assets + reportable_donations_value - total_deductible_debts
-    
-    # Return 3 values (net_assets, debts, warnings)
-    # Note: caller signature needs to be updated or warnings handled separately
-    # For now, we print warnings or attach them to a global warning context if available
-    # Since we can't easily change the signature without affecting callers, we'll assume callers handle list return or we leave as is
-    # However, to be cleaner, we should return warnings.
-    # Let's check calculator.py usage first. 
-    # Actually, the user asked for warnings in the output. 
-    # The function signature was: -> Tuple[float, float]
-    # Changing it might break things. Let's see who calls it.
     
     return net_succession_assets, total_deductible_debts, debt_warnings

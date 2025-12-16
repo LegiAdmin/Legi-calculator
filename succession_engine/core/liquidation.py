@@ -265,14 +265,42 @@ class MatrimonialLiquidator:
             for asset in input_data.assets:
                 asset_id_lower = asset.id.lower()
                 for preciput_type in matrimonial_advantages.preciput_assets:
-                    if preciput_type.value.lower() in asset_id_lower or \
-                       ('residence' in asset_id_lower and preciput_type.value == 'RESIDENCE_PRINCIPALE'):
-                        preciput_value += asset.estimated_value
-                        preciput_details.append(f"{asset.id}: {asset.estimated_value:,.0f}€")
+                    # Match by Property (Robust) or by Name (Fallback)
+                    is_match = False
+                    
+                    # 1. Check Main Residence property
+                    # Note: We need to import PreciputType or compare by string value if import is tricky here
+                    # Since preciput_type is an Enum member (from Pydantic model), we can compare keys or values
+                    if preciput_type.value == "RESIDENCE_PRINCIPALE" and asset.is_main_residence:
+                        is_match = True
+                    
+                    # 2. Check Name string match
+                    elif preciput_type.value.lower() in asset_id_lower:
+                        is_match = True
+                    
+                    if is_match:
+                        
+                        asset_val = asset.estimated_value
+                        preciput_value += asset_val
+                        preciput_details.append(f"{asset.id}: {asset_val:,.0f}€")
+                        
+                        # Remove asset from Deceased Assets
+                        # Logic:
+                        # - If Community Asset: Deceased currently holds 50% in 'deceased_assets'.
+                        #   Preciput removes it entirely to give to spouse.
+                        #   So we subtract 50% of its value (the part included in deceased_assets).
+                        # - If Deceased Own Property (unlikely for Preciput but possible):
+                        #   We subtract 100% of its value.
+                        
+                        # We check origin
+                        if asset.asset_origin.value == "COMMUNITY_PROPERTY":
+                            deceased_assets = max(0, deceased_assets - (asset_val / 2))
+                        elif asset.asset_origin.value == "PERSONAL_PROPERTY" and asset.determine_owner(input_data.matrimonial_regime, input_data.marriage_date) == "DECEASED":
+                             deceased_assets = max(0, deceased_assets - asset_val)
+                        
                         break
             
             if preciput_value > 0:
-                deceased_assets = max(0, deceased_assets - preciput_value)
                 liquidation_details.append(
                     f"\n  🎯 CLAUSE DE PRÉCIPUT (Art. 1515 CC)"
                 )

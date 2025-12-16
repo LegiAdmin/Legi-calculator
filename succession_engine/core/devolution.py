@@ -389,6 +389,68 @@ class HeirShareCalculator:
                 if h.relationship not in [HeirRelation.CHILD, HeirRelation.GRANDCHILD, HeirRelation.GREAT_GRANDCHILD]
             ]
         
+        # ===================== ORDRE DES HÉRITIERS (Art 731-755 CC) =====================
+        
+        # CAS 1: Parents ET Frères/Sœurs (Art. 738 CC)
+        # Si le défunt laisse père et mère et des frères et sœurs (ou neveux/nièces) :
+        # - Père : 1/4
+        # - Mère : 1/4
+        # - Frères/Sœurs : Moitié restante (1/2)
+        # Si un seul parent : 1/4 pour lui, 3/4 pour les frères/sœurs.
+        
+        siblings_or_nephews = [
+            h for h in other_heirs 
+            if h.relationship in [HeirRelation.SIBLING, HeirRelation.NEPHEW_NIECE]
+        ]
+        
+        if not spouse and not children and not grandchildren and not great_grandchildren:
+            if parents and siblings_or_nephews:
+                num_parents = len(parents)
+                
+                # Part des parents
+                if num_parents == 2:
+                    heir_shares[parents[0].id] = 0.25
+                    heir_shares[parents[1].id] = 0.25
+                    siblings_share_total = 0.5
+                else: # 1 parent
+                    heir_shares[parents[0].id] = 0.25
+                    siblings_share_total = 0.75
+                
+                # Part des frères/sœurs (égalitaire entre eux pour l'instant)
+                # Note: On devrait gérer la représentation ici aussi (neveux)
+                # Simplification: partage égal entre têtes de souche sibling
+                if siblings_or_nephews:
+                    # On utilise la logique de souche pour les siblings (car neveux peuvent représenter)
+                    pass # Will fall through to standard distribution if we just return here? No.
+                    
+                    # Manual distribution for siblings
+                    sib_souches = {}
+                    for sib in [h for h in heirs if h.relationship == HeirRelation.SIBLING]:
+                        sib_souches[sib.id] = [sib]
+                    
+                    # Nephews representing
+                    nephews = [h for h in heirs if h.relationship == HeirRelation.NEPHEW_NIECE]
+                    for neph in nephews:
+                        if neph.represented_heir_id:
+                            if neph.represented_heir_id not in sib_souches:
+                                sib_souches[neph.represented_heir_id] = []
+                            sib_souches[neph.represented_heir_id].append(neph)
+                    
+                    # Only keep valid souches (non-renouncing)
+                    valid_sib_souches = []
+                    for sid, members in sib_souches.items():
+                        if any(getattr(h, 'acceptance_option', 'PURE_SIMPLE') != 'RENUNCIATION' for h in members):
+                            valid_sib_souches.append(members)
+                    
+                    if valid_sib_souches:
+                        share_per_souche = siblings_share_total / len(valid_sib_souches)
+                        for members in valid_sib_souches:
+                            share_per_member = share_per_souche / len(members)
+                            for m in members:
+                                heir_shares[m.id] = share_per_member
+                                
+                return heir_shares
+
         # ===================== FENTE SUCCESSORALE (Art. 746-749 CC) =====================
         # When no spouse and no descendants, check if we should apply fente
         # The estate is split 50/50 between paternal and maternal lines

@@ -323,4 +323,55 @@ Ajouter champ :
 ### 12.4 Affichage des Risques
 Le moteur renverra des `warnings` spécifiques.
 *   Warning "Loi Applicable" -> Afficher en **ROUGE** en haut du bilan.
+// ... (Warnings International)
 *   Warning "Double Imposition" -> Afficher en **ORANGE** à côté de l'actif concerné.
+
+---
+
+## PARTIE 13 : FONCTIONNALITÉS EXPERT (PHASE 15)
+
+### 13.1 Assurance-Vie Complexe
+L'assurance-vie a des régimes fiscaux très différents selon la date du contrat.
+
+**Modifications UI (Formulaire Assurance-vie) :**
+Ajouter un sélecteur "Type de Contrat" :
+*   `STANDARD` (Défaut) : Régime classique (Abattement 152 500€).
+*   `VIE_GENERATION` : Contrat "Vie-Génération" (Investi 33% en PME/ETI/Logement social).
+    *   *Info-bulle* : "Abattement supplémentaire de 20% sur les capitaux décès avant l'abattement fixe."
+*   `ANCIEN_CONTRAT` : Contrat exonéré.
+    *   *Info-bulle* : "Primes versées avant le 13/10/1998 sur un contrat ouvert avant le 20/11/1991."
+
+### 13.2 Dettes au Prorata (Art. 769 CGI)
+Si une dette finance un bien partiellement exonéré (ex: Forêt, Parts Dutreil), elle n'est déductible qu'à hauteur de la part taxable.
+
+**Modifications UI (Formulaire Dettes) :**
+*   S'assurer que le champ "Lié à l'actif" (`linked_asset_id`) est bien proposé (Dropdown des actifs).
+*   Si l'utilisateur lie une dette à un actif "Professionnel" (Dutreil/Rural), afficher un petit warning/info :
+    *   *"Attention : Ce bien étant partiellement exonéré, la dette ne sera déductible qu'au prorata (Art. 769 CGI)."*
+
+---
+
+## PARTIE 14 : DROIT DE RETOUR (Art. 738-2 CC)
+
+### 14.1 Contexte
+Si le défunt décède **sans descendant**, les parents peuvent récupérer les biens qu'ils lui avaient donnés (limité à 1/4 par parent).
+
+### 14.2 Modification UI (Formulaire Actif)
+Ajouter un champ conditionnel :
+*   Question : **"Ce bien a-t-il été reçu par donation d'un parent ?"** (Oui/Non)
+*   Si Oui : Select **"Parent donateur"** (Dropdown des Membres type PARENT).
+*   *Stockage* : Champ `received_from_parent_id`.
+
+---
+
+## PARTIE 15 : RAFFINEMENTS FAMILLE
+
+### 15.1 Adoption
+Si `adoption_type` sélectionné :
+*   Si "Simple" -> Checkbox supplémentaire : **"L'adopté a-t-il reçu des soins continus pendant 5 ans durant sa minorité ?"**
+    *   *Info-bulle* : "Condition requise (Art. 786 CGI) pour bénéficier des droits en ligne directe (sinon 60%)."
+
+### 15.2 Fente Successorale (Pas de conjoint ni enfants)
+Pour les héritiers de type **PARENT** ou **SIBLING/NEPHEW** :
+*   Ajouter Radio Button obligatoires : **"Ligne Paternelle"** / **"Ligne Maternelle"**.
+*   *Stockage* : `paternal_line` (true/false).

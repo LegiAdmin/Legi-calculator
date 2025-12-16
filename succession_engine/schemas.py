@@ -50,7 +50,7 @@ class TestamentDistribution(str, Enum):
     CHILDREN_ALL = "CHILDREN_ALL"
     CUSTOM = "CUSTOM"
 
-class PrecipitAssetType(str, Enum):
+class PreciputType(str, Enum):
     """Types de biens pouvant faire l'objet d'une clause de préciput."""
     RESIDENCE_PRINCIPALE = "RESIDENCE_PRINCIPALE"
     RESIDENCE_SECONDAIRE = "RESIDENCE_SECONDAIRE"
@@ -65,6 +65,18 @@ class ExemptionType(str, Enum):
     DUTREIL = "DUTREIL"           # Pacte Dutreil - Art. 787 B CGI
     RURAL_LEASE = "RURAL_LEASE"   # Bail rural long terme - Art. 793 CGI
     FORESTRY = "FORESTRY"         # Groupement forestier - Art. 793 CGI
+
+class LifeInsuranceContractType(str, Enum):
+    """
+    Type de contrat d'assurance-vie (impact fiscal).
+    
+    - STANDARD: Abattement 152 500€ / 30 500€
+    - VIE_GENERATION: Abattement supplémentaire de 20% avant abattement fixe (Art. 990 I bis CGI)
+    - ANCIEN_CONTRAT: Exonéré (Primes < 13/10/98 et souscrit < 20/11/91)
+    """
+    STANDARD = "STANDARD"
+    VIE_GENERATION = "VIE_GENERATION"
+    ANCIEN_CONTRAT = "ANCIEN_CONTRAT"
 
 class AcceptanceOption(str, Enum):
     """
@@ -100,7 +112,7 @@ class MatrimonialAdvantages(BaseModel):
     # Clause de préciput (Art. 1515 CC)
     # Le conjoint prélève certains biens avant tout partage
     has_preciput: bool = False
-    preciput_assets: List[PrecipitAssetType] = Field(default_factory=list)
+    preciput_assets: List[PreciputType] = Field(default_factory=list)
     
     # Clause de partage inégal
     # Ex: 70/30 au lieu de 50/50
@@ -205,6 +217,7 @@ class Asset(BaseModel):
     premiums_after_70: Optional[float] = None
     premiums_before_70: Optional[float] = None
     subscriber_type: Optional[SubscriberType] = None
+    life_insurance_contract_type: LifeInsuranceContractType = LifeInsuranceContractType.STANDARD
     
     # Droit de retour (Art. 738-2 CC)
     # Si le défunt a reçu ce bien d'un parent par donation, le parent peut le récupérer
