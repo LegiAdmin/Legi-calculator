@@ -1,0 +1,16 @@
+
+services:
+  api:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_DEBUG=True
+      - DJANGO_SECRET_KEY=dev_secret_key
+      - DJANGO_ALLOWED_HOSTS=*
+      - SUPABASE_URL=YOUR_SUPABASE_URL
+      - SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+      - SUPABASE_JWT_SECRET=YOUR_SUPABASE_JWT_SECRET
