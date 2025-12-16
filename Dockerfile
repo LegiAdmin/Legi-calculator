@@ -22,8 +22,8 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # Copy project
 COPY . /app/
 
-# Collect static files (if needed)
-# RUN python manage.py collectstatic --noinput
+# Collect static files (Essential for Whitenoise)
+RUN python manage.py collectstatic --noinput
 
 # Run server using Gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "config.wsgi:application"]
