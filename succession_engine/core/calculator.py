@@ -337,6 +337,18 @@ class SuccessionCalculator:
             )
             total_tax += tax
             
+            # Build received_assets list from specific bequests
+            from succession_engine.schemas import ReceivedAsset
+            received_assets = [
+                ReceivedAsset(
+                    asset_id=b['asset_id'],
+                    asset_name=b.get('asset_name', b['asset_id']),
+                    share_percentage=b.get('share_percentage', 100.0),
+                    value=b['value']
+                )
+                for b in heir_bequests
+            ]
+            
             # Build heir breakdown
             heirs_breakdown.append(HeirBreakdown(
                 id=heir.id,
@@ -347,7 +359,8 @@ class SuccessionCalculator:
                 abatement_used=tax_details.allowance_amount,
                 tax_amount=tax,
                 net_share_value=total_civil_value - tax,
-                tax_calculation_details=tax_details
+                tax_calculation_details=tax_details,
+                received_assets=received_assets
             ))
         
         return heirs_breakdown, total_tax

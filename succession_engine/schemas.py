@@ -563,6 +563,13 @@ class GlobalMetrics(BaseModel):
     disposable_quota_value: float
     total_tax_amount: float
 
+class ReceivedAsset(BaseModel):
+    """Détail d'un actif reçu via legs particulier"""
+    asset_id: str
+    asset_name: Optional[str] = None  # Nom lisible (ex: "Maison de vacances")
+    share_percentage: float = 100.0
+    value: float  # Valeur correspondant au pourcentage
+
 class HeirBreakdown(BaseModel):
     id: str
     name: str
@@ -573,6 +580,8 @@ class HeirBreakdown(BaseModel):
     tax_amount: float
     net_share_value: float
     tax_calculation_details: Optional['TaxCalculationDetail'] = None
+    # Legs particuliers reçus par cet héritier
+    received_assets: List[ReceivedAsset] = Field(default_factory=list)
 
 class TaxBracketDetail(BaseModel):
     """Details of a single tax bracket application"""
