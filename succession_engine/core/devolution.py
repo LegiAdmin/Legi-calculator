@@ -80,7 +80,7 @@ def calculate_legal_reserve(heirs: List) -> Tuple[float, str]:
             return DEFAULT_RESERVE_FRACTION, "Aucun descendant ni ascendant réservataire"
 
 
-def process_specific_bequests(assets: List, wishes, heirs: List) -> Tuple[List[Dict], float]:
+def process_specific_bequests(assets: List, wishes, heirs: List) -> Tuple[List[Dict], float, List[str]]:
     """
     Process specific bequests (legs particuliers) from testament.
     
@@ -90,10 +90,14 @@ def process_specific_bequests(assets: List, wishes, heirs: List) -> Tuple[List[D
         heirs: List of FamilyMember objects
         
     Returns:
-        Tuple of (list of bequest info dicts, total bequests value)
+        Tuple of (list of bequest info dicts, total bequests value, list of warnings)
     """
     specific_bequests_info = []
     bequests_total_value = 0.0
+    warnings = []
+    
+    # Track allocation per asset
+    asset_allocation = {}
     
     if wishes and wishes.specific_bequests:
         for bequest in wishes.specific_bequests:
@@ -106,13 +110,27 @@ def process_specific_bequests(assets: List, wishes, heirs: List) -> Tuple[List[D
                     bequests_total_value += value
                     specific_bequests_info.append({
                         'asset_id': bequest.asset_id,
+                        'asset_name': bequest.asset_id,  # Use ID as name for now
                         'beneficiary_id': bequest.beneficiary_id,
                         'beneficiary_name': f"Héritier {bequest.beneficiary_id}",
                         'value': value,
                         'share_percentage': bequest.share_percentage
                     })
+                    
+                    # Track allocation
+                    if bequest.asset_id not in asset_allocation:
+                        asset_allocation[bequest.asset_id] = 0.0
+                    asset_allocation[bequest.asset_id] += bequest.share_percentage
     
-    return specific_bequests_info, bequests_total_value
+    # Check for over-allocation
+    for asset_id, total_pct in asset_allocation.items():
+        if total_pct > 100.0:
+            warnings.append(
+                f"⚠️ Le bien '{asset_id}' est sur-alloué ({total_pct:.0f}% distribué). "
+                f"Le partage dépasse 100% - vérifiez les legs particuliers."
+            )
+    
+    return specific_bequests_info, bequests_total_value, warnings
 
 
 class HeirShareCalculator:

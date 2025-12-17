@@ -123,9 +123,13 @@ class SuccessionCalculator:
         disposable_quota = net_succession_assets - legal_reserve
         
         # Handle specific bequests
-        specific_bequests_info, bequests_total_value = process_specific_bequests(
+        specific_bequests_info, bequests_total_value, bequest_warnings = process_specific_bequests(
             input_data.assets, input_data.wishes, heirs
         )
+        
+        # Add bequest over-allocation warnings
+        for bw in bequest_warnings:
+            alert_manager.add(AlertSeverity.WARNING, AlertAudience.USER, AlertCategory.LEGAL, bw)
         
         # Calculate heir shares
         heir_shares = share_calculator.calculate(heirs, input_data.wishes, net_succession_assets)
