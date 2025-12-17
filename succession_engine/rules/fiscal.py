@@ -103,6 +103,8 @@ class FiscalCalculator:
         # 1. Apply Allowances
         relation_map = {
             HeirRelation.CHILD: 'CHILD',
+            HeirRelation.GRANDCHILD: 'CHILD',  # Same allowance as children
+            HeirRelation.GREAT_GRANDCHILD: 'CHILD',  # Same allowance as children
             HeirRelation.PARENT: 'CHILD',
             HeirRelation.SIBLING: 'SIBLING',
             HeirRelation.SPOUSE: 'SPOUSE',
