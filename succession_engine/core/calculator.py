@@ -416,9 +416,9 @@ class SuccessionCalculator:
             # Build heir breakdown
             heirs_breakdown.append(HeirBreakdown(
                 id=heir.id,
-                name=f"Héritier {heir.id}",
-                legal_share_percent=actual_percentage,
-                gross_share_value=total_civil_value, # Civil value
+                name=heir.id,  # Front-end should send readable name as ID
+                legal_share_percent=share_percent * 100,  # Legal share from devolution (should total 100%)
+                gross_share_value=total_civil_value, # Civil value (includes bequests)
                 taxable_base=tax_details.net_taxable,
                 abatement_used=tax_details.allowance_amount,
                 tax_amount=tax,
