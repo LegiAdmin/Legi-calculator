@@ -29,29 +29,20 @@ from succession_engine.core.devolution import (
 )
 
 
+from succession_engine.core.alerts import AlertManager
+from succession_engine.schemas import AlertAudience, AlertCategory, AlertSeverity
+
 class SuccessionCalculator:
     """
     Main orchestrator for the succession calculation pipeline.
-    
-    Implements the 4-step succession process according to French law:
-    1. Matrimonial Regime Liquidation
-    2. Estate Reconstitution (with prior donations)
-    3. Devolution Determination (legal reserve & shares)
-    4. Taxation Calculation
     """
 
     def run(self, input_data: SimulationInput) -> SuccessionOutput:
         """
         Execute the complete succession calculation.
-        
-        Args:
-            input_data: Complete simulation input including assets, heirs, wishes, donations
-            
-        Returns:
-            SuccessionOutput with complete breakdown, taxes, and explanations
         """
         calculation_steps = []
-        warnings = []
+        alert_manager = AlertManager()
         
         # Initialize liquidator and share calculator
         liquidator = MatrimonialLiquidator()
@@ -76,15 +67,22 @@ class SuccessionCalculator:
         net_succession_assets, total_debts, debt_warnings = reconstitute_estate(
             net_assets, reportable_donations_value, input_data.debts, input_data.assets
         )
+        
         # Phase 11: International Warnings
-        warnings.extend(self._generate_international_warnings(input_data))
+        self._generate_international_warnings(input_data, alert_manager)
 
         # Add debt related warnings
         if debt_warnings:
-            warnings.extend(debt_warnings)
+             for dw in debt_warnings:
+                 alert_manager.add_legal_warning(dw, audience=AlertAudience.USER)
         
         # Check for Date Consistency (Phase 9)
-        warnings.extend(self._generate_consistency_warnings(input_data))
+        self._generate_consistency_warnings(input_data, alert_manager)
+        
+        # Capture Pydantic validation warnings (Heir consistency)
+        if input_data.heir_warnings:
+            for hw in input_data.heir_warnings:
+                alert_manager.add_legal_warning(hw, audience=AlertAudience.USER)
 
         donation_summary = (
             f"{len(reportable_donations)} donation(s) rapportable(s) pour {reportable_donations_value:,.2f}€" 
@@ -107,7 +105,10 @@ class SuccessionCalculator:
         )
         if total_return > 0:
             net_succession_assets -= total_return
-            warnings.extend(return_warnings)
+            if return_warnings:
+                for rw in return_warnings:
+                    alert_manager.add_legal_warning(rw, audience=AlertAudience.NOTARY)
+            
             calculation_steps.append(CalculationStep(
                 step_number=2, # sub-step
                 step_name="Application Droit de Retour (Art. 738-2 CC)",
@@ -141,10 +142,12 @@ class SuccessionCalculator:
         ))
         
         # Check for excessive liberalities (Art. 920+ CC - Réduction)
-        warnings.extend(check_excessive_liberalities(
+        excessive_lib_warnings = check_excessive_liberalities(
             reportable_donations_value, bequests_total_value,
             disposable_quota, legal_reserve, reserve_fraction
-        ))
+        )
+        for elw in excessive_lib_warnings:
+            alert_manager.add(AlertSeverity.CRITICAL, AlertAudience.USER, AlertCategory.LEGAL, elw)
 
         # STEP 4: Calculate taxation and build heir breakdown
         
@@ -168,7 +171,7 @@ class SuccessionCalculator:
 
         # STEP 5: Calculate Life Insurance Taxation (if any)
         life_insurance_total_tax = self._calculate_life_insurance_taxation(
-            liquidator.life_insurance_assets, heirs, warnings, calculation_steps
+            liquidator.life_insurance_assets, heirs, alert_manager, calculation_steps
         )
 
         # Build asset breakdown with donations
@@ -196,6 +199,12 @@ class SuccessionCalculator:
         liquidation_details_obj = self._build_liquidation_details(
             input_data, liquidator, net_assets
         )
+        
+        # Get alerts and legacy warnings
+        final_alerts = alert_manager.alerts
+        legacy_warnings = alert_manager.get_legacy_warnings()
+        if not legacy_warnings:
+            legacy_warnings = ["✅ Aucun problème juridique détecté."]
 
         return SuccessionOutput(
             global_metrics=metrics,
@@ -203,31 +212,32 @@ class SuccessionCalculator:
             family_context=family_context,
             spouse_details=spouse_details,
             liquidation_details=liquidation_details_obj,
-            warnings=warnings if warnings else ["✅ Aucun problème juridique détecté."],
+            alerts=final_alerts,
+            warnings=legacy_warnings,
             calculation_steps=calculation_steps,
             assets_breakdown=assets_breakdown
         )
 
-    def _generate_international_warnings(self, input_data: SimulationInput) -> List[str]:
+    def _generate_international_warnings(self, input_data: SimulationInput, alert_manager: AlertManager):
         """Generate warnings for international context (Phase 11)."""
-        wc = []
         if getattr(input_data, 'residence_country', 'FR') != 'FR':
-            wc.append(
-                f"⚠️ Attention : Le défunt résidait à l'étranger ({input_data.residence_country}). "
-                f"La loi successorale française peut ne pas s'appliquer (Règlement UE n°650/2012). "
-                f"Vérifiez s'il y a un choix de loi (Professio Juris) ou si la loi de résidence s'applique."
+            alert_manager.add(
+                AlertSeverity.WARNING, AlertAudience.NOTARY, AlertCategory.LEGAL,
+                f"Résidence à l'étranger ({input_data.residence_country})",
+                "Risque d'application d'une loi successorale étrangère (Règlement UE n°650/2012). Vérifier Professio Juris."
             )
+
         for asset in input_data.assets:
             if getattr(asset, 'location_country', 'FR') != 'FR':
-                 wc.append(
-                    f"⚠️ Attention : Le bien '{asset.id}' est situé à l'étranger ({asset.location_country}). "
-                    f"Risque de double imposition. Vérifiez les conventions fiscales internationales entre la France et ce pays."
+                 alert_manager.add(
+                    AlertSeverity.WARNING, AlertAudience.NOTARY, AlertCategory.FISCAL,
+                    f"Bien à l'étranger ({asset.id} en {asset.location_country})",
+                    "Risque de double imposition. Vérifiez les conventions fiscales bilatérales."
                 )
-        return wc
 
-    def _generate_consistency_warnings(self, input_data: SimulationInput) -> List[str]:
+
+    def _generate_consistency_warnings(self, input_data: SimulationInput, alert_manager: AlertManager):
         """Generate warnings for date and regime consistency (Phase 9)."""
-        wc = []
         community_regimes = ["COMMUNITY_LEGAL", "COMMUNITY_UNIVERSAL", "COMMUNITY_REDUCED_TO_ACQUESTS"]
         if input_data.matrimonial_regime.value in community_regimes and input_data.marriage_date:
             from succession_engine.schemas import AssetOrigin
@@ -237,16 +247,13 @@ class SuccessionCalculator:
                     is_during_marriage = asset.acquisition_date >= input_data.marriage_date
                     
                     if asset.asset_origin == AssetOrigin.COMMUNITY_PROPERTY and is_before_marriage:
-                        wc.append(
-                            f"📅 Date d'acquisition ({(asset.acquisition_date)}) antérieure au mariage ({input_data.marriage_date}) "
-                            f"pour le bien '{asset.id}' déclaré 'Commun'. (Possible si apport à la communauté)"
+                        alert_manager.add_data_warning(
+                            f"Incohérence Date/Régime : Bien '{asset.id}' acquis AVANT mariage déclaré 'Commun'. (Possible si apport)"
                         )
                     elif asset.asset_origin == AssetOrigin.PERSONAL_PROPERTY and is_during_marriage:
-                        wc.append(
-                            f"📅 Date d'acquisition ({(asset.acquisition_date)}) pendant le mariage ({input_data.marriage_date}) "
-                            f"pour le bien '{asset.id}' déclaré 'Propre'. (Vérifier clause de remploi ou origine des fonds)"
+                        alert_manager.add_data_warning(
+                            f"Incohérence Date/Régime : Bien '{asset.id}' acquis PENDANT mariage déclaré 'Propre'. (Clause de remploi ?)"
                         )
-        return wc
         
     def _calculate_global_exemption(self, assets: List) -> float:
         """Calculate total amount of professional exemptions (Dutreil, Rural, etc.) on the estate."""
@@ -273,16 +280,6 @@ class SuccessionCalculator:
     ) -> Tuple[List[HeirBreakdown], float]:
         """
         Calculate taxation for each heir and build complete breakdown.
-        
-        For each heir:
-        1. Calculate theoretical share
-        2. Impute prior donations (rapport civil)
-        3. Deduct professional exemptions (pro-rata)
-        4. Add specific bequests
-        5. Calculate tax with details
-        
-        Returns:
-            Tuple of (list of HeirBreakdown, total tax amount)
         """
         heirs_breakdown = []
         total_tax = 0.0
@@ -359,13 +356,11 @@ class SuccessionCalculator:
         self,
         life_insurance_assets: List,
         heirs: List,
-        warnings: List[str],
+        alert_manager: AlertManager,
         calculation_steps: List[CalculationStep]
     ) -> float:
         """
         Calculate Life Insurance Taxation (Art. 990 I & 757 B CGI).
-        
-        Life insurance contracts are outside regular succession.
         """
         if not life_insurance_assets:
             return 0.0
@@ -390,20 +385,15 @@ class SuccessionCalculator:
                 # Cas 1: Ancien Contrat (Exonéré)
                 if contract_type == LifeInsuranceContractType.ANCIEN_CONTRAT:
                     li_tax = 0.0
-                    warnings.append(
-                        f"📜 Assurance-vie {li_asset.id}: Exonérée (Ancien contrat primes < 98 / souscrit < 91)."
+                    alert_manager.add_fiscal_note(
+                        f"Assurance-vie {li_asset.id}: Exonérée",
+                        "Ancien contrat (primes < 98 / souscrit < 91) - Hors succession."
                     )
                 else:
                     # Cas 2: Vie-Génération (-20% abattement sur l'assiette avant abattement fixe)
-                    # Note: Le LifeInsuranceCalculator standard ne gère pas ce paramètre pour l'instant.
-                    # On applique l'abattement manuellement ici sur les primes AVANT d'appeler le calculateur
-                    # assiette_taxable = valeur * 0.80
-                    
                     adjusted_primes_before_70 = premiums_before_70
                     
                     if contract_type == LifeInsuranceContractType.VIE_GENERATION:
-                        # L'abattement de 20% s'applique sur le capital décès (donc primes + intérêts)
-                        # Ici on simplifie en l'appliquant aux primes déclarées (supposées être le capital)
                         adjusted_primes_before_70 = premiums_before_70 * 0.80
                     
                     li_tax, li_details = LifeInsuranceCalculator.calculate_life_insurance_tax(
@@ -416,12 +406,11 @@ class SuccessionCalculator:
                     # Accumulate tax
                     life_insurance_total_tax += li_tax
                     
-                    details_str = f"primes avant 70 ans: {premiums_before_70:,.0f}€ -> Base Taxable: {adjusted_primes_before_70:,.0f}€" if contract_type == LifeInsuranceContractType.VIE_GENERATION else f"primes avant 70 ans: {premiums_before_70:,.0f}€"
+                    details_str = f"sur base {adjusted_primes_before_70:,.0f}€ (Abattement 20%)" if contract_type == LifeInsuranceContractType.VIE_GENERATION else f"sur base {premiums_before_70:,.0f}€"
                     
-                    warnings.append(
-                        f"📋 Assurance-vie {li_asset.id} ({contract_type.value}): "
-                        f"Droits: {li_tax:,.2f}€ "
-                        f"({details_str}, après 70 ans: {premiums_after_70:,.0f}€)"
+                    alert_manager.add_fiscal_note(
+                        f"Assurance-vie {li_asset.id} ({contract_type.value})",
+                        f"Droits dus: {li_tax:,.2f}€ ({details_str})."
                     )
         
         calculation_steps.append(CalculationStep(

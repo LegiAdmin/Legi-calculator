@@ -96,6 +96,31 @@ class AdoptionType(str, Enum):
     """
     FULL = "plénière"   # Adoption plénière - droits = enfant
     SIMPLE = "simple"   # Adoption simple - droits = étranger (sauf exception)
+
+# --- Alert System ---
+
+class AlertSeverity(str, Enum):
+    INFO = "INFO"         # Information utile (ex: Abattement appliqué)
+    WARNING = "WARNING"   # Attention requise, mais calcul possible (ex: Risque double imposition)
+    CRITICAL = "CRITICAL" # Blocage ou illégalité probable (ex: Atteinte à la réserve)
+
+class AlertAudience(str, Enum):
+    USER = "USER"       # Langage simple, orienté action
+    NOTARY = "NOTARY"   # Termes juridiques précis, points de vigilance
+
+class AlertCategory(str, Enum):
+    LEGAL = "LEGAL"           # Droit civil (Réserve, ordre héritiers...)
+    FISCAL = "FISCAL"         # Droit fiscal (Abattements, tranches...)
+    DATA = "DATA"             # Qualité de données (Dates incohérentes...)
+    OPTIMIZATION = "OPTIMIZATION" # Pistes d'amélioration
+
+class Alert(BaseModel):
+    severity: AlertSeverity
+    audience: AlertAudience
+    category: AlertCategory
+    message: str          # Titre court
+    details: Optional[str] = None # Explication détaillée
+
 # --- Models ---
 
 class MatrimonialAdvantages(BaseModel):
@@ -645,5 +670,8 @@ class SuccessionOutput(BaseModel):
     # Étapes de calcul (pour transparence)
     calculation_steps: List[CalculationStep] = Field(default_factory=list)
     
-    # Alertes et warnings
+    # Alertes structurées (Nouveau système)
+    alerts: List[Alert] = Field(default_factory=list)
+
+    # Alertes Legacy (Liste de strings pour backward compatibility)
     warnings: List[str] = Field(default_factory=list)

@@ -179,7 +179,7 @@ run_test("Scenario 3: Pacte Dutreil (75% ex)", input_3, {
 # -------------------------------------------------------------------------
 input_4 = SimulationInput(members=[m3_c1], assets=[asset_sci], residence_country='UK', matrimonial_regime=MatrimonialRegime.SEPARATION)
 run_test("Scenario 4: International Warning", input_4, {
-    "Has Warning": lambda r: "défunt résidait à l'étranger" in str(r.warnings)
+    "Has Warning": lambda r: "Résidence à l'étranger" in str(r.warnings)
 })
 
 # -------------------------------------------------------------------------

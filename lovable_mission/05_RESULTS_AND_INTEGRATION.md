@@ -57,13 +57,24 @@ Pour rassurer les professionnels, affiche l'accordéon "Détail du Calcul" :
 *   Affiche la liste `calculation_steps` retournée par l'API.
 *   Chaque étape doit montrer son `step_name` et `result_summary`.
 
-### 3.4 Audit & Alertes (`Warnings`)
-Crée une section dédiée "Audit du Dossier" :
-*   Affiche la liste `warnings` renvoyée par l'API.
-*   Code couleur :
-    *   🔴 Rouge : Bloquant / Critique (ex: Réserve non respectée).
-    *   🟠 Orange : Fiscalité incertaine / Optimisation possible (ex: Art 769 CGI appliqué, double imposition internationale).
-    *   🔵 Bleu : Information (ex: Représentation appliquée).
+### 3.4 Audit & Alertes (Nouveau Système Unifié)
+L'API retourne désormais une liste structurée `alerts` (remplaçant l'ancien `warnings`).
+Tu dois afficher ces alertes intelligemment selon le profil (Utilisateur vs Notaire).
+
+#### A. Vue "Utilisateur" (Guidage)
+*   **Filtrage** : Affiche uniquement `audience = 'USER'`.
+*   **Affichage** :
+    *   🚨 **Bloquant/Critique** (`severity='CRITICAL'`) : Banner rouge en haut de page. (ex: Réserve non respectée).
+    *   ⚠️ **Important** (`severity='WARNING'`) : Toast ou Callout orange. (ex: Incohérence de dates).
+    *   ℹ️ **Info** (`severity='INFO'`) : Simple note bleue.
+
+#### B. Vue "Notaire" (Expertise)
+*   Créer un onglet ou un mode **"Détail Technique & Vigilance"**.
+*   **Affichage** : Table complète de toutes les alertes (USER + NOTARY).
+*   **Badges** :
+    *   Badge Catégorie : `LEGAL`, `FISCAL`, `DATA`, `OPTIMIZATION`.
+    *   Badge Sévérité.
+*   *Exemple d'usage* : Le notaire doit voir immédiatement les risques de double imposition (Alertes Internationales) ou les notes sur les anciens contrats d'assurance-vie.
 
 ---
 
