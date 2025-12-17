@@ -342,7 +342,7 @@ class SuccessionCalculator:
             total_tax += tax
             
             # Build received_assets list from specific bequests
-            from succession_engine.schemas import ReceivedAsset
+            from succession_engine.schemas import ReceivedAsset, ExplanationKey
             received_assets = [
                 ReceivedAsset(
                     asset_id=b['asset_id'],
@@ -352,6 +352,66 @@ class SuccessionCalculator:
                 )
                 for b in heir_bequests
             ]
+            
+            # Build explanation keys for this heir
+            heir_explanation_keys = []
+            
+            # Explain share source
+            if heir.relationship == HeirRelation.CHILD:
+                num_children = len([h for h in heirs if h.relationship == HeirRelation.CHILD])
+                heir_explanation_keys.append(ExplanationKey(
+                    key="SHARE_CHILDREN_EQUAL",
+                    context={"num_children": num_children}
+                ))
+            elif heir.relationship == HeirRelation.SPOUSE:
+                # Determine if usufruct based on share: if share < 100%, likely usufruct
+                # A more robust check would require passing spouse_choice, simplifying here
+                heir_explanation_keys.append(ExplanationKey(
+                    key="SHARE_SPOUSE",
+                    context={"share_percent": actual_percentage}
+                ))
+            elif heir.relationship == HeirRelation.GRANDCHILD and heir.represented_heir_id:
+                heir_explanation_keys.append(ExplanationKey(
+                    key="SHARE_REPRESENTATION",
+                    context={"represented_id": heir.represented_heir_id}
+                ))
+            elif heir.relationship == HeirRelation.SIBLING:
+                heir_explanation_keys.append(ExplanationKey(
+                    key="SHARE_SIBLINGS",
+                    context={"share_percent": actual_percentage}
+                ))
+            
+            # Explain abatement
+            if tax_details.allowance_amount > 0:
+                if heir.relationship == HeirRelation.CHILD:
+                    heir_explanation_keys.append(ExplanationKey(
+                        key="ABATEMENT_CHILD_100K",
+                        context={"amount": tax_details.allowance_amount}
+                    ))
+                elif heir.relationship == HeirRelation.SIBLING:
+                    heir_explanation_keys.append(ExplanationKey(
+                        key="ABATEMENT_SIBLING_15K",
+                        context={"amount": tax_details.allowance_amount}
+                    ))
+            
+            if is_disabled:
+                heir_explanation_keys.append(ExplanationKey(
+                    key="ABATEMENT_DISABILITY_159K",
+                    context={}
+                ))
+            
+            if prior_allowance_used > 0:
+                heir_explanation_keys.append(ExplanationKey(
+                    key="ABATEMENT_CONSUMED_15Y",
+                    context={"amount_used": prior_allowance_used}
+                ))
+            
+            # Explain tax exemption for spouse
+            if heir.relationship in [HeirRelation.SPOUSE, HeirRelation.PARTNER]:
+                heir_explanation_keys.append(ExplanationKey(
+                    key="TAX_SPOUSE_EXEMPT",
+                    context={}
+                ))
             
             # Build heir breakdown
             heirs_breakdown.append(HeirBreakdown(
@@ -364,7 +424,8 @@ class SuccessionCalculator:
                 tax_amount=tax,
                 net_share_value=total_civil_value - tax,
                 tax_calculation_details=tax_details,
-                received_assets=received_assets
+                received_assets=received_assets,
+                explanation_keys=heir_explanation_keys
             ))
         
         return heirs_breakdown, total_tax

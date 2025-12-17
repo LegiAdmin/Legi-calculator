@@ -121,6 +121,14 @@ class Alert(BaseModel):
     message: str          # Titre court
     details: Optional[str] = None # Explication détaillée
 
+class ExplanationKey(BaseModel):
+    """
+    Clé d'explication structurée pour le frontend.
+    Le frontend maintient un dictionnaire qui mappe ces clés vers des textes humains.
+    """
+    key: str  # Ex: "SHARE_CHILDREN_EQUAL"
+    context: dict = Field(default_factory=dict)  # Ex: {"num_children": 2}
+
 # --- Models ---
 
 class MatrimonialAdvantages(BaseModel):
@@ -562,6 +570,8 @@ class GlobalMetrics(BaseModel):
     legal_reserve_value: float
     disposable_quota_value: float
     total_tax_amount: float
+    # Clés d'explication pour le frontend
+    explanation_keys: List['ExplanationKey'] = Field(default_factory=list)
 
 class ReceivedAsset(BaseModel):
     """Détail d'un actif reçu via legs particulier"""
@@ -582,6 +592,8 @@ class HeirBreakdown(BaseModel):
     tax_calculation_details: Optional['TaxCalculationDetail'] = None
     # Legs particuliers reçus par cet héritier
     received_assets: List[ReceivedAsset] = Field(default_factory=list)
+    # Clés d'explication pour le frontend
+    explanation_keys: List['ExplanationKey'] = Field(default_factory=list)
 
 class TaxBracketDetail(BaseModel):
     """Details of a single tax bracket application"""
@@ -643,6 +655,8 @@ class LiquidationDetails(BaseModel):
     
     # Détails textuels
     details: List[str] = Field(default_factory=list)
+    # Clés d'explication pour le frontend
+    explanation_keys: List['ExplanationKey'] = Field(default_factory=list)
 
 class FamilyContext(BaseModel):
     """Contexte familial de la succession"""
