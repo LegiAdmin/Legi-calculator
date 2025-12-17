@@ -27,4 +27,5 @@ COPY . /app/
 RUN python manage.py collectstatic --noinput
 
 # Run server using Gunicorn, binding to the PORT environment variable (Railway requirement)
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-8000} config.wsgi:application"]
+# Also runs migrations automatically on startup to ensure DB schema and data are up to date
+CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn --bind 0.0.0.0:${PORT:-8000} config.wsgi:application"]

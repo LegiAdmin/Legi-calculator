@@ -113,22 +113,8 @@ class FiscalCalculator:
         }
         db_relation = relation_map.get(effective_relationship, 'OTHER')
         
-        # Hardcoded fallback allowances (Art. 779 CGI - 2024)
-        # Used when database is empty or migration hasn't run
-        FALLBACK_ALLOWANCES = {
-            'CHILD': 100_000.0,
-            'SIBLING': 15_932.0,
-            'SPOUSE': float('inf'),  # Fully exempt
-            'NEPHEW_NIECE': 7_967.0,
-            'OTHER': 1_594.0,
-        }
-        
         allowance_obj = Allowance.objects.filter(legislation=legislation, relationship=db_relation).first()
-        if allowance_obj:
-            base_allowance = float(allowance_obj.amount)
-        else:
-            # Use hardcoded fallback if DB query returns nothing
-            base_allowance = FALLBACK_ALLOWANCES.get(db_relation, 1_594.0)
+        base_allowance = float(allowance_obj.amount) if allowance_obj else 0.0
         
         # Apply disability allowance (Art. 779 II CGI) - cumulative
         disability_bonus = DISABILITY_ALLOWANCE if is_disabled else 0.0
