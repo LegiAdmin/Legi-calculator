@@ -90,6 +90,7 @@ class FiscalCalculator:
             legislation = Legislation.objects.get(is_active=True)
         except Legislation.DoesNotExist:
             # Return empty details if no legislation
+            print(f"[DEBUG FISCAL] No active legislation found!")
             return 0.0, None
 
         # Handle adoption simple (Art. 786 CGI)
@@ -116,8 +117,16 @@ class FiscalCalculator:
         rel_key = str(effective_relationship.value) if hasattr(effective_relationship, 'value') else str(effective_relationship)
         db_relation = relation_map.get(rel_key, 'OTHER')
         
+        # DEBUG: Log key values
+        print(f"[DEBUG FISCAL] relationship={relationship}, type={type(relationship)}")
+        print(f"[DEBUG FISCAL] effective_relationship={effective_relationship}")
+        print(f"[DEBUG FISCAL] rel_key={rel_key}, db_relation={db_relation}")
+        
         allowance_obj = Allowance.objects.filter(legislation=legislation, relationship=db_relation).first()
         base_allowance = float(allowance_obj.amount) if allowance_obj else 0.0
+        
+        # DEBUG: Log allowance result
+        print(f"[DEBUG FISCAL] allowance_obj={allowance_obj}, base_allowance={base_allowance}")
         
         # Apply disability allowance (Art. 779 II CGI) - cumulative
         disability_bonus = DISABILITY_ALLOWANCE if is_disabled else 0.0
