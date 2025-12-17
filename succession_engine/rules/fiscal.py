@@ -101,17 +101,20 @@ class FiscalCalculator:
                 effective_relationship = HeirRelation.OTHER  # 60% rate
 
         # 1. Apply Allowances
+        # Use string keys for robust matching (handles both enum and string values)
         relation_map = {
-            HeirRelation.CHILD: 'CHILD',
-            HeirRelation.GRANDCHILD: 'CHILD',  # Same allowance as children
-            HeirRelation.GREAT_GRANDCHILD: 'CHILD',  # Same allowance as children
-            HeirRelation.PARENT: 'CHILD',
-            HeirRelation.SIBLING: 'SIBLING',
-            HeirRelation.SPOUSE: 'SPOUSE',
-            HeirRelation.PARTNER: 'SPOUSE',
-            HeirRelation.NEPHEW_NIECE: 'NEPHEW_NIECE',  # Specific treatment
+            'CHILD': 'CHILD',
+            'GRANDCHILD': 'CHILD',  # Same allowance as children
+            'GREAT_GRANDCHILD': 'CHILD',  # Same allowance as children
+            'PARENT': 'CHILD',
+            'SIBLING': 'SIBLING',
+            'SPOUSE': 'SPOUSE',
+            'PARTNER': 'SPOUSE',
+            'NEPHEW_NIECE': 'NEPHEW_NIECE',  # Specific treatment
         }
-        db_relation = relation_map.get(effective_relationship, 'OTHER')
+        # Normalize to string (handles both HeirRelation enum and string values)
+        rel_key = str(effective_relationship.value) if hasattr(effective_relationship, 'value') else str(effective_relationship)
+        db_relation = relation_map.get(rel_key, 'OTHER')
         
         allowance_obj = Allowance.objects.filter(legislation=legislation, relationship=db_relation).first()
         base_allowance = float(allowance_obj.amount) if allowance_obj else 0.0
