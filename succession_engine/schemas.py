@@ -419,6 +419,14 @@ class FamilyMember(BaseModel):
     
     # Option successorale (Art. 768 CC)
     acceptance_option: AcceptanceOption = AcceptanceOption.PURE_SIMPLE
+
+    @field_validator('relationship', mode='before')
+    @classmethod
+    def normalize_relationship(cls, v):
+        """Normalize relationship to uppercase for case-insensitive matching."""
+        if isinstance(v, str):
+            return v.upper()
+        return v
 class SpecificBequest(BaseModel):
     asset_id: str
     beneficiary_id: str
