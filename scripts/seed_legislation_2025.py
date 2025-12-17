@@ -71,7 +71,7 @@ for bracket in sibling_brackets:
 # Barème autres (neveux, nièces, non-parents) - 2025
 print("\n  → Autres (neveux, nièces, non-parents)")
 other_brackets = [
-    {'min_amount': 0, 'max_amount': None, 'rate': 0.55},  # Neveux/nièces: 55%
+    {'min_amount': 0, 'max_amount': None, 'rate': 0.60},  # Autres: 60% (Art. 777 CGI)
 ]
 
 for bracket in other_brackets:
