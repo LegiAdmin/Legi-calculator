@@ -174,7 +174,11 @@ class FiscalCalculator:
         
         brackets = TaxBracket.objects.filter(legislation=legislation, relationship=db_relation).order_by('min_amount')
         
+        # DEBUG: Log brackets found
+        print(f"[DEBUG FISCAL] TaxBrackets for {db_relation}: {list(brackets.values_list('rate', flat=True))}")
+        
         if not brackets.exists():
+            print(f"[DEBUG FISCAL] NO BRACKETS FOUND for {db_relation}!")
             details = TaxCalculationDetail(
                 relationship=relationship.value,
                 gross_amount=taxable_amount,
