@@ -1,76 +1,85 @@
 # Mission Lovable - Étape 4 : Stratégie & Volontés (Wishes)
 
-**Objectif** : Capturer les intentions du défunt ("Qui reçoit quoi ?") sans bloquer l'utilisateur avec des règles juridiques complexes. C'est le moteur qui fera le tri.
+**Note au développeur** : Ce document liste les **possibilités fonctionnelles** offertes par le moteur de calcul. Ton objectif est de concevoir l'expérience utilisateur (UX) la plus fluide pour recueillir ces intentions, sans te sentir contraint par une forme de formulaire précise.
+
+L'objectif est de répondre à la question : *"Qui reçoit quoi ?"* (Donations passées et transmission future).
 
 > **Philosophie "Permissive UI"** :
-> L'interface doit permettre de combiner librement des **Legs Particuliers** (biens précis) ET une **Répartition Globale** (%).
-> Ne cherche pas à valider la légalité en temps réel (ex: réserve héréditaire). Laisse l'utilisateur exprimer ses vœux, le calculateur générera les warnings nécessaires ensuite.
-
-**Fichiers concernés** : `src/components/strategy/StrategyDashboard.tsx` (Suggestion), `src/components/strategy/WishesForm.tsx`, `src/hooks/useSimulation.ts`.
+> L'utilisateur ne connait pas le droit. Laisse-le exprimer ses souhaits (même s'ils semblent mathématiquement ou légalement "cassés").
+> *Exemple : Il peut léguer 100% de sa maison à Paul ET 50% de cette même maison à Jacques. Laisse passer, le moteur renverra une alerte.*
 
 ---
 
-## 1. UX : PARCOURS PAR INTENTION
+## 1. LE CHAMP DES POSSIBLES (Ce que le moteur sait gérer)
 
-Au lieu d'un formulaire administratif, propose un parcours guidé par les questions clés :
+Voici les scénarios que ton interface peut proposer à l'utilisateur, du plus simple au plus complexe. Tu peux les combiner.
 
-### 1.1 "Avez-vous fait des donations de votre vivant ?"
-*   Si OUI -> Interface d'ajout de Donations.
-*   *Subtilité UX* : Distinguer clairement :
-    *   **Donation-Partage** (Valeur figée au jour de l'acte) -> Pas de rapport civil.
-    *   **Don Manuel / Simple** (Revalorisée au décès) -> Rapport civil.
-    *   *Champs requis* : Date, Bénéficiaire, Montant/Bien.
+### A. Les Donations Passées (Le Passé)
+Le moteur a besoin de connaître l'historique pour équilibrer les comptes.
+*   **Types supportés** : Don Manuel (Cash/Meuble), Donation Partage (Figée), Donation Immo.
+*   **Champs clés** : Date, Bénéficiaire, Montant/Bien.
+*   **Subtilité** : Idéalement, distinguer si la donation est "Avance de part" (avance sur héritage) ou "Hors part" (avantage définitif). Par défaut le moteur gère le standard, mais l'option existe.
 
-### 1.2 "Avez-vous rédigé un testament ?"
-Si OUI, deux niveaux de personnalisation possibles (cumulables) :
+### B. Le Testament : "Qui reçoit quoi ?" (Le Futur)
 
-#### A. Legs Particuliers ("Je donne ma maison à Paul")
-*   Permettre de lier un **Actif** spécifique à un **Bénéficiaire**.
-*   *Backend* : `wishes.specific_bequests`.
-*   *UX* : Une liste "Actif -> Bénéficiaire".
+Le moteur permet une **double distribution** logicielle :
 
-#### B. Répartition du Reste ("Je veux 50/50 entre mes enfants et mon ami")
-*   Par défaut : **Dévolution Légale** (Rien à faire).
-*   Si personnalisé : **Répartition Sur-Mesure** (`testament_distribution` = `CUSTOM`).
-*   *UX* : Un camembert ou des sliders pour répartir 100% de la *masse restante* entre les bénéficiaires (Héritiers + Tiers).
+#### 1. Les Legs Particuliers (Biens Spécifiques)
+L'utilisateur peut désigner des biens précis pour des personnes précises.
+*   **Un bien -> Une personne** : *"La Maison à Paul à 100%".*
+*   **Un bien -> Plusieurs personnes** : *"L'Appartement à 50% pour Paul et 50% pour Jacques".* (Le moteur supporte le champ `share_percentage` sur un legs).
+*   **Cumul** : On peut faire autant de legs qu'on veut.
 
-### 1.3 "Clauses Spécifiques (Mariage)"
-*   Uniquement si Marieé(e) sous régime communautaire.
-*   Proposer les clauses : **Préciput**, **Attribution Intégrale**.
+#### 2. La Répartition du "Reste" (Quote-part résiduelle)
+Une fois les biens spécifiques distribués, il reste un "solde" (comptes bancaires non légués, meubles, soulte...).
+*   **Option "Légale"** : Par défaut, le reste est partagé selon la loi (Enfants puis Conjoint etc.).
+*   **Option "Sur-Mesure"** : L'utilisateur peut dire *"Tout le reste est partagé : 40% à l'Association ABC, 60% à mes petits-enfants"*.
+    *   Le moteur attend ici une liste `custom_shares` (Bénéficiaire -> %).
 
----
+### C. Le Conjoint Survivant (Si marié)
+Si un conjoint existe, deux mécanismes s'ajoutent :
+*   **Donation au Dernier Vivant (DDV)** : Une simple case à cocher ("Aviez-vous fait une donation entre époux ?"). Cela débloque des options.
+*   **L'Option** : Le conjoint a souvent le choix (Usufruit, 1/4 Propriété, etc.). Tu peux soit le demander, soit afficher ces options comme des **scénarios de résultats** (ex: "Voir les résultats si Madame choisit l'Usufruit").
 
-## 2. LOGIQUE DE PERSISTANCE (CRITIQUE)
-
-Toutes les données saisies à cette étape (comme aux précédentes) doivent être sauvegardées dans la base de données Supabase créée à l'étape 1.
-
-*   **Table `simulations`** : Stocke le JSON complet de l'état (Assets, Members, Wishes...).
-*   **Sauvegarde** : Auto-save ou bouton "Sauvegarder" explicite.
-*   **Pourquoi ?** : Le calcul final (Étape 5) est stateless, il a besoin de tout l'objet `SimulationInput` reconstitué.
+### D. Le Passif (Dettes)
+Pour avoir un net taxable juste, il faut déduire les dettes.
+*   **Lien Dette-Actif** : Le moteur permet de lier un emprunt à un actif (ex: Prêt Immo sur la Maison). C'est crucial pour la fiscalité de certains biens exonérés (Dutreil, Forêt).
+*   **Justificatifs** : Pour les dettes > 1500€ (frais obsèques), un flag `proof_provided` existe.
 
 ---
 
-## 3. POINTS D'ATTENTION & PISTES DE RÉFLEXION
+## 2. LOGIQUE DE PERSISTANCE
 
-### 3.1 La "Double Distribution"
-L'utilisateur peut vouloir dire : *"Je donne la maison à Paul (Legs particulier), et tout le reste est partagé 50/50 entre Paul et Jacques."*
-=> **C'est possible !**
-*   L'UI doit permettre d'ajouter des legs particuliers, PUIS de définir la répartition du reste.
-*   Ne bloque pas l'utilisateur s'il vide son patrimoine avec des legs particuliers. Le moteur gérera.
-
-### 3.2 L'Option du Conjoint
-*   Si le conjoint est présent, il a souvent un choix à faire (Usufruit vs 1/4 PP).
-*   **Si Donation au Dernier Vivant (DDV)** déclarée : L'option "Quotité Disponible" s'ajoute.
-*   *Conseil UX* : Affiche ces options comme des "Scénarios" possibles pour le calcul, ou laisse par défaut sur "Usufruit" (le plus courant) avec possibilité de changer.
-
-### 3.3 Passif & Dettes
-*   N'oublie pas une section **Passif** (`debts`).
-*   Permettre de lier une dette à un actif (ex: Emprunt Immo sur Résidence Principale) est crucial pour le net taxable par actif.
+*   Tout doit être sauvegardé dans le JSON `SimulationInput` en base de données.
+*   Le calcul est stateless : il a besoin de TOUT recharger (Membres + Actifs + Volontés) pour tourner.
 
 ---
 
-## CRITÈRES DE SUCCÈS
-*   [ ] L'utilisateur peut combiner Legs Particuliers et Répartition en %.
-*   [ ] Les donations passées sont clairement identifiées (Rapportables ou non).
-*   [ ] Aucune règle bloquante n'empêche la saisie (ex: dépasser la quotité disponible est autorisé en saisie, le moteur alertera).
-*   [ ] Les données sont persistées en base pour le calcul final.
+## 3. SUGGESTIONS UX (À toi de jouer)
+
+*   **Approche Storytelling** : *"Avez-vous déjà donné de l'argent à vos enfants ?"* -> *"Et pour votre succession, avez-vous des souhaits particuliers pour certains biens ?"*
+*   **Approche Visuelle** : Pour la répartition du reste, des sliders ou un camembert interactif fonctionnent bien.
+*   **Gestion des Erreurs** : Si l'utilisateur distribue 120% du reste, ne le bloque pas forcément, mais affiche un warning visuel ("Attention, le total dépasse 100%").
+
+---
+
+## 4. RÉCAPITULATIF TECHNIQUE (`Wishes` Schema)
+
+Pour rappel, voici ce que le moteur attend dans l'objet `wishes` :
+
+```json
+{
+  "has_spouse_donation": true/false, // DDV
+  "testament_distribution": "CUSTOM", // ou LEGAL
+  "specific_bequests": [ // Legs particuliers
+    { "asset_id": "Maison", "beneficiary_id": "Paul", "share_percentage": 100 },
+    { "asset_id": "Appart", "beneficiary_id": "Paul", "share_percentage": 50 },
+    { "asset_id": "Appart", "beneficiary_id": "Jacques", "share_percentage": 50 }
+  ],
+  "custom_shares": [ // Répartition du reste
+    { "beneficiary_id": "AssocABC", "percentage": 40 },
+    { "beneficiary_id": "PetitsEnfants", "percentage": 60 }
+  ]
+}
+```
+Laisse ta créativité UX organiser cela !
