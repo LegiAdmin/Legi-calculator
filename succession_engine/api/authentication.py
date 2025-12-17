@@ -3,7 +3,27 @@ import jwt
 from django.conf import settings
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
-from django.contrib.auth.models import User
+
+
+class SupabaseUser:
+    """
+    Ephemeral user object for Supabase JWT authentication.
+    DRF requires request.user to have is_authenticated property.
+    """
+    def __init__(self, uid, email=None):
+        self.id = uid
+        self.pk = uid
+        self.email = email
+        self.username = email or uid
+
+    @property
+    def is_authenticated(self):
+        return True
+
+    @property
+    def is_anonymous(self):
+        return False
+
 
 class SupabaseAuthentication(BaseAuthentication):
     """
@@ -32,18 +52,12 @@ class SupabaseAuthentication(BaseAuthentication):
                 audience="authenticated" # Supabase default audience
             )
             
-            # 4. Create/Get User (Stateless)
-            # We map the Supabase UUID 'sub' to a Django User.
-            # Strategy: We don't necessarily need to persist users in SQLite if logic is stateless.
-            # But DRF expects a request.user.
-            # We create a simple ephemeral user or look it up.
-            
+            # 4. Create Ephemeral User
             user_id = payload.get('sub')
             email = payload.get('email', '')
             
-            # Option A: Ephemeral User (Fastest for pure logic API)
-            user = User(username=user_id, email=email)
-            user.is_authenticated = True
+            # Return SupabaseUser (not Django User to avoid is_authenticated setter issue)
+            user = SupabaseUser(uid=user_id, email=email)
             
             return (user, payload)
 
