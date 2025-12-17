@@ -1,6 +1,13 @@
 ## Contexte
 
-Tu dois intégrer une API Django de calcul de succession française. L'API est accessible sur `https://legi-calculator-production.up.railway.app/api/` (en local: `http://127.0.0.1:8000/api/`).
+Tu dois intégrer une API Django de calcul de succession française. L'API est accessible sur `https://legi-calculator-production.up.railway.app/api/` `(en local: `http://127.0.0.1:8000/api/`)`.
+
+> [!IMPORTANT]
+> **CONSIGNE CRITIQUE D'IMPLÉMENTATION**
+> Ce fichier sert UNIQUEMENT de référence pour les TYPES et l'API.
+> **NE PAS IMPLÉMENTER** la logique métier ou les composants UI basés uniquement sur ce fichier.
+> Attends les instructions spécifiques dans les prompts suivants (01, 02, 03...) pour implémenter chaque fonctionnalité.
+> Ce contexte est fourni pour que tu comprennes la structure globale des données, pas pour tout coder d'un coup.
 
 ---
 

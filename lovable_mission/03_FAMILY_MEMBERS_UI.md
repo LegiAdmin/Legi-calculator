@@ -7,71 +7,67 @@
 
 ---
 
-## 1. UX : ARBRE GÉNÉALOGIQUE PROGRESSIF
+## 1. PHILOSOPHIE UX : "L'ARBRE OUVERT"
 
-L'utilisateur ne doit pas saisir une liste plate, mais construire un arbre.
+Contrairement à une approche purement légale qui masquerait les héritiers non-prioritaires, nous devons permettre la saisie de **TOUS** les membres potentiels (pour les legs).
 
-### 1.1 Niveau 1 : Les Enfants
-*   Afficher une liste de "Souches" (Enfants).
-*   Bouton **"Ajouter un Enfant"**.
-*   Champs pour chaque enfant :
-    *   `Prénom`, `Date de Naissance`.
-    *   Switch : **"Est décédé(e) ?"**
-    *   Switch : **"A renoncé à la succession ?"**
-    *   *Si Décédé/Renonçant* -> Afficher un appel à l'action clair : *"Ajouter ses enfants (Vos petits-enfants) pour la représentation"*.
+L'interface doit être séquencée en 3 étapes logiques :
 
-### 1.2 Niveau 2 : Les Petits-Enfants (Attachés à un parent)
-*   Chaque "Enfant" (card/row) doit avoir une sous-section ou un bouton **"Ajouter un Petit-Enfant"**.
-*   **Logique Métier Critique** :
-    *   Si le parent est **DÉCÉDÉ** ou **RENONÇANT** :
-        *   Le petit-enfant vient **en représentation** (hérite à la place du parent).
-        *   **Action** : Assigner automatiquement `represented_heir_id` = ID du Parent.
-    *   Si le parent est **VIVANT** et **ACCEPTANT** :
-        *   Le petit-enfant n'hérite pas légalement (sauf testament spécifique).
-        *   **Action** : On permet quand même de le créer (pour les legs futurs), mais `represented_heir_id` = `null`.
+### Étape 1 : La Lignée Directe (Descendants)
+*   **Question** : "Avez-vous des enfants ?"
+*   **UI** : Liste des Enfants (Souches).
+*   **Interaction Hiérarchique** :
+    *   Sur chaque Enfant, bouton/accordéon **"Ajouter Petit-Enfant"**.
+    *   *Note au développeur* : Toujours permettre l'ajout, même si le parent est vivant (utile pour saut de génération).
+    *   *Auto-detection* : Si Parent = Décédé/Renonçant -> Flag `represented_heir_id` automatique sur les petits-enfants.
 
-### 1.3 Gestion des autres héritiers (Si pas de descendants)
-*   Si aucun enfant n'est saisi, afficher progressivement les options pour :
-    *   **Père / Mère** (Ascendants).
-    *   **Frères / Sœurs** (Collatéraux).
-    *   **Neveux / Nièces** (Si Frère/Sœur décédé -> Représentation identique aux enfants).
+### Étape 2 : L'Ascendance et les Collatéraux
+*   **Question** : "Avez-vous des parents ou frères et sœurs ?"
+*   **UI** :
+    *   **Parents** : Ajout Père / Mère.
+    *   **Frères / Sœurs** : Liste.
+    *   **Neveux / Nièces** : Attachés aux Frères/Sœurs (comme les petits-enfants).
+*   *Note* : Cette section doit être accessible **MÊME SI** des enfants sont saisis (car on peut vouloir léguer la quotité disponible aux parents/frères).
 
----
-
-## 2. DÉTAILS JURIDIQUES & CHAMPS COMPLÉMENTAIRES
-
-Une fois la structure créée, des champs spécifiques apparaissent selon le contexte.
-
-### 2.1 Spécificités Adoption (Enfants uniquement)
-*   [ ] Select "Type d'adoption" (Visible sur chaque Enfant) :
-    *   **Aucune** (Biologique) - Défaut.
-    *   **Plénière** (Droits complets).
-    *   **Simple** (Droits restreints - 60% taxe).
-*   [ ] *Si Adoption Simple* :
-    *   Checkbox : **"A reçu des soins continus pendant 5 ans durant sa minorité ?"**
-    *   *Impact* : Débloque la fiscalité "Enfant".
-
-### 2.2 Fente Successorale (Parents/Collatéraux)
-*   Uniquement si aucun descendant ni conjoint n'est présent.
-*   [ ] Sur chaque Parent ou Frère/Sœur : Radio Obligatoire **"Ligne Paternelle"** vs **"Ligne Maternelle"** (`paternal_line`).
-
-### 2.3 Handicap
-*   [ ] Checkbox globale sur chaque fiche membre : **"En situation de handicap"**.
-    *   *Impact* : Abattement +159 325€.
+### Étape 3 : Tiers et Autres Bénéficiaires
+*   **Question** : "Souhaitez-vous inclure d'autres personnes (proches, associations...) ?"
+*   **Type de relation** :
+    *   `PARTNER` (Concubin / Pacs).
+    *   `OTHER` (Ami, Tiers).
+    *   `CHARITY` (Association - *Nouveau type à prévoir*).
 
 ---
 
-## 3. RÉCAPITULATIF TECHNIQUE DES LIENS
-Le frontend doit transformer l'arbre visuel en une liste plate pour l'API.
+## 2. CHAMPS DE SAISIE ET LOGIQUE
 
-| ID Membre | Relation | Parent Status | Résultat API (`represented_heir_id`) |
-| :--- | :--- | :--- | :--- |
-| Enfant A | CHILD | Vivant | `null` |
-| Enfant B | CHILD | Décédé | `null` |
-| Petit-Fils B1 | GRANDCHILD | (Enfant B est Décédé) | `ID_Enfant_B` |
-| Petit-Fils A1 | GRANDCHILD | (Enfant A est Vivant) | `null` |
+### 2.1 Champs Communs
+*   `Prénom / Nom`.
+*   `Date de Naissance` (Ou "Décédé" -> Date Décès).
+*   `Relation` (Determiné par la section d'ajout).
+
+### 2.2 Champs Spécifiques (Conditionnels)
+*   **Adoption** (Sur Enfant uniquement) : Simple/Plénière.
+*   **Handicap** (Sur tous) : Checkbox "Situation de Handicap".
+*   **Renonciation** (Sur héritiers présomptifs) : Switch "Renonce à la succession".
+*   **Fente Successorale** (Sur Parents/Collatéraux) :
+    *   Si contextuellement pertinent (pas d'enfants, pas de conjoint), demander "Ligne Paternelle" / "Maternelle".
+    *   *UX* : Peut être inféré si on demande "Père" vs "Mère", mais pour les Frères/Soeurs (demi-frères), la question se pose.
 
 ---
+
+## 3. TABLE DE ROUTAGE (RÈGLES MÉTIER)
+
+Le frontend doit être permissif en entrée, c'est le moteur (Backend) qui filtrera les héritiers réservataires vs les légataires.
+
+| Qui j'ajoute ? | Relation API | Parent Vivant ? | Parent Décédé ? | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| Enfant | `CHILD` | - | - | Toujours héritier (sauf si renonce) |
+| Petit-Enfant | `GRANDCHILD` | Non-Héritier (Légataire potentiel) | Héritier (Représentant) | L'UI doit gérer les 2 cas |
+| Parent | `PARENT` | Non-Héritier (Si enfants) | Non-Héritier (Si enfants) | Peut recevoir un legs |
+| Frère/Sœur | `SIBLING` | Non-Héritier (Si enfants/parents) | - | Peut recevoir un legs |
+| Tiers | `OTHER` | Jamais Héritier | Jamais Héritier | Uniquement pour legs |
+
+
 
 ## CRITÈRES DE SUCCÈS
 *   [ ] La saisie est hiérarchique (Parent -> Enfant).
