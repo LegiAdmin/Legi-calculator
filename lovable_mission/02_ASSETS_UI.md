@@ -1,8 +1,8 @@
 # Mission Lovable - Étape 2 : Interface Gestion des Actifs (Expert)
 
-**Objectif** : Créer les formulaires UI pour gérer les actifs complexes (Immobilier, Assurance-Vie, SCI) avec toutes les nuances fiscales.
+**Objectif** : Modifie les formulaires UI pour gérer les actifs complexes (Immobilier, Assurance-Vie, SCI) avec toutes les nuances fiscales.
 
-> **🎨 Liberté UX/UI** : Tu as carte blanche pour organiser l'interface (Stepper, Modales, Accordéons, Questions conversationnelles...) afin de rendre l'expérience utilisateur la plus fluide possible.
+> **🎨 Liberté UX/UI** : Tu as carte blanche pour organiser l'interface, afin de rendre l'expérience utilisateur la plus fluide possible.
 > **⚠️ Contrainte Data** : Seule contrainte stricte : le format des données en sortie (JSON) doit correspondre *exactement* aux spécifications pour être accepté par l'API.
 
 **Fichiers concernés** : `src/components/assets/AssetForm.tsx` (ou équivalent), `src/hooks/useAssets.ts`.
@@ -11,24 +11,28 @@
 
 ## 1. FORMULAIRE IMMOBILIER (REAL_ESTATE)
 
-### 1.1 Résidence Principale
-Ajouter une section "Résidence Principale" :
-*   [ ] Checkbox : "C'est la résidence principale du couple" (`is_main_residence`).
-*   [ ] *Conditionnel* : Si cochée, afficher Checkbox : "Le conjoint survivant continue de l'occuper" (`spouse_occupies_property`).
-    *   *Info-bulle* : "Conditionne l'abattement de 20% sur la valeur vénale (Art. 764 bis CGI)."
+### 1.3 Spécificités Immobilier
+*   [ ] **Résidence Principale** (`is_main_residence`)
+    *   Checkbox : "C'est la résidence principale du couple"
+    *   Si cochée : "Le conjoint survivant continue de l'occuper ?" (`spouse_occupies_property`) -> Abattement 20%.
 
-### 1.2 Démembrement de Propriété
-Si le mode de détention est **Usufruit** ou **Nue-Propriété** :
-*   [ ] Select "Type d'usufruit" :
-    *   **Viager** (Défaut) -> Input "Date de naissance de l'usufruitier".
-    *   **Temporaire** -> Input "Durée de l'usufruit (années)".
-    *   *Logique* : L'usufruit temporaire est valorisé à 23% par tranche de 10 ans (Art. 669 II CGI).
+---
 
-### 1.3 Droit de Retour (Art. 738-2 CC)
-Ajouter une question pour gérer le retour légal des biens de famille :
-*   [ ] Radio : "Ce bien a-t-il été reçu par donation d'un parent ?" (Oui/Non).
-*   [ ] *Conditionnel* : Si Oui, Select "Parent Donateur" (Liste des Membres type PARENT).
-    *   *Stockage* : Clé `received_from_parent_id`.
+## 2. QUESTIONS COMMUNES (TOUS ACTIFS)
+
+Certaines questions s'appliquent à **tous** les types de biens (Immobilier, Meubles, Placements...).
+
+### 2.1 Mode de Détention (Démembrement)
+*   [ ] Select "Mode" : Pleine Propriété, Usufruit, Nue-Propriété, Indivision.
+*   [ ] Si **Démembrement** (Usufruit/Nue-Propriété) :
+    *   Select "Type" : Viager (défaut) ou Temporaire.
+    *   Input requis selon type : "Date naissance usufruitier" ou "Durée".
+
+### 2.2 Droit de Retour (Biens de Famille - Art. 738-2 CC)
+*Concerne tout bien reçu par donation d'un parent (Immeuble, Bijoux, Parts...)*
+*   [ ] Radio : "Ce bien a-t-il été reçu par donation d'un parent ?"
+*   [ ] Si Oui -> Select "Parent Donateur" (Liste des PARENTS).
+    *   *Stockage* : `received_from_parent_id`.
 
 ---
 
