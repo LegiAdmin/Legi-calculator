@@ -282,6 +282,14 @@
                 "Art. 757 B CGI"
             ],
             "category": "FISCAL"
+        },
+        "RULE_RENUNCIATION": {
+            "what": "Renonciation à la succession",
+            "why": "L'héritier qui renonce est censé n'avoir jamais été héritier. Sa part accroît aux cohéritiers de même rang.",
+            "legal_basis": [
+                "Art. 805-808 Code civil"
+            ],
+            "category": "DEVOLUTION"
         }
     },
     "exclusion_reasons": {

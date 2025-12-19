@@ -191,6 +191,24 @@ class HeirShareCalculator:
         """
         heir_shares = {}
         
+        # Phase 1: Filter out renounced heirs (Art. 805+ CC)
+        renounced_heirs = [h for h in heirs if getattr(h, 'has_renounced', False)]
+        active_heirs = [h for h in heirs if not getattr(h, 'has_renounced', False)]
+        
+        # Store renounced heirs with 0% share
+        renounced_shares = {}
+        if renounced_heirs:
+            self.add_applied_rule("RULE_RENUNCIATION")
+            for renounced in renounced_heirs:
+                renounced_shares[renounced.id] = 0.0  # Explicit 0% for renounced
+        
+        # If all heirs renounced, return only renounced shares (edge case)
+        if not active_heirs:
+            return renounced_shares
+        
+        # Use active_heirs for calculation from here
+        heirs = active_heirs
+        
         # Build representation map
         representation_map = self._build_representation_map(heirs)
         
@@ -210,6 +228,9 @@ class HeirShareCalculator:
             heir_shares = self._apply_custom_shares(wishes)
         else:
             heir_shares = self._apply_default_distribution(heirs, representation_map)
+        
+        # Merge renounced shares (0%) with calculated shares
+        heir_shares.update(renounced_shares)
         
         return heir_shares
     

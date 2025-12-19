@@ -417,6 +417,11 @@ class FamilyMember(BaseModel):
     # Pour adoption simple: si True, bénéficie des droits en ligne directe (Art. 786 CGI)
     has_received_continuous_care: bool = False
     
+    # Renonciation à succession (Art. 805+ CC)
+    # Si True, l'héritier renonce et sa part accroît aux autres héritiers de même rang
+    has_renounced: bool = False
+    renunciation_date: Optional[date] = None
+    
     # Option successorale (Art. 768 CC)
     acceptance_option: AcceptanceOption = AcceptanceOption.PURE_SIMPLE
 

@@ -202,3 +202,93 @@ class TestExcessiveLiberalities:
         )
         
         assert len(warnings) > 0
+
+
+class TestRenunciation:
+    """Tests for renunciation handling (Art. 805+ CC)."""
+    
+    def test_renounced_heir_gets_zero_percent(self):
+        """Héritier ayant renoncé reçoit 0%."""
+        from succession_engine.core.devolution import HeirShareCalculator
+        from succession_engine.schemas import FamilyMember, HeirRelation
+        
+        calculator = HeirShareCalculator()
+        heirs = [
+            FamilyMember(
+                id="child1",
+                birth_date=date(1990, 1, 1),
+                relationship=HeirRelation.CHILD,
+                has_renounced=True
+            ),
+            FamilyMember(
+                id="child2",
+                birth_date=date(1992, 1, 1),
+                relationship=HeirRelation.CHILD,
+                has_renounced=False
+            ),
+        ]
+        
+        shares = calculator.calculate(heirs, None, 500000)
+        
+        assert shares["child1"] == 0.0  # Renoncé
+        assert shares["child2"] == 1.0  # Hérite de tout
+    
+    def test_renounced_heir_share_redistributed(self):
+        """Part du renonçant redistribuée aux autres."""
+        from succession_engine.core.devolution import HeirShareCalculator
+        from succession_engine.schemas import FamilyMember, HeirRelation
+        
+        calculator = HeirShareCalculator()
+        heirs = [
+            FamilyMember(
+                id="child1",
+                birth_date=date(1990, 1, 1),
+                relationship=HeirRelation.CHILD,
+                has_renounced=True
+            ),
+            FamilyMember(
+                id="child2",
+                birth_date=date(1992, 1, 1),
+                relationship=HeirRelation.CHILD,
+                has_renounced=False
+            ),
+            FamilyMember(
+                id="child3",
+                birth_date=date(1994, 1, 1),
+                relationship=HeirRelation.CHILD,
+                has_renounced=False
+            ),
+        ]
+        
+        shares = calculator.calculate(heirs, None, 600000)
+        
+        # child1 renonce → child2 et child3 se partagent 100%
+        assert shares["child1"] == 0.0
+        assert shares["child2"] == 0.5  # 50%
+        assert shares["child3"] == 0.5  # 50%
+    
+    def test_renunciation_rule_tracked(self):
+        """Vérifie que RULE_RENUNCIATION est trackée."""
+        from succession_engine.core.devolution import HeirShareCalculator
+        from succession_engine.schemas import FamilyMember, HeirRelation
+        
+        calculator = HeirShareCalculator()
+        heirs = [
+            FamilyMember(
+                id="child1",
+                birth_date=date(1990, 1, 1),
+                relationship=HeirRelation.CHILD,
+                has_renounced=True
+            ),
+            FamilyMember(
+                id="child2",
+                birth_date=date(1992, 1, 1),
+                relationship=HeirRelation.CHILD,
+                has_renounced=False
+            ),
+        ]
+        
+        calculator.calculate(heirs, None, 500000)
+        
+        assert "RULE_RENUNCIATION" in calculator.applied_rule_ids
+
