@@ -45,7 +45,7 @@ class Command(BaseCommand):
         from succession_engine.core.calculator import SuccessionCalculator
         from succession_engine.schemas import SimulationInput
         
-        scenarios_path = Path(__file__).parent.parent.parent.parent.parent / 'tests' / 'golden_scenarios.json'
+        scenarios_path = Path(__file__).resolve().parent.parent.parent.parent / 'tests' / 'golden_scenarios.json'
         
         if not scenarios_path.exists():
             raise CommandError(f'File not found: {scenarios_path}')

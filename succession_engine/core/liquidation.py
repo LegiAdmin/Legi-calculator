@@ -292,11 +292,21 @@ class MatrimonialLiquidator:
                         # - If Deceased Own Property (unlikely for Preciput but possible):
                         #   We subtract 100% of its value.
                         
-                        # We check origin
+                        # Calculate value to subtract (must match value added to estate)
+                        value_to_subtract = asset_val
+                        
+                        # If 20% abatement was applied, subtract the abated value
+                        # Note: We must replicate the condition from the main loop
+                        if asset.is_main_residence and asset.spouse_occupies_property:
+                            # Abatement applies to the real estate part
+                            # Logic: estimated_value * (share / 100) * 0.20 was deducted
+                            # So actual_value = estimated_value - (estimated_value * 0.20) = estimated_value * 0.8
+                            value_to_subtract = asset_val * 0.8
+                        
                         if asset.asset_origin.value == "COMMUNITY_PROPERTY":
-                            deceased_assets = max(0, deceased_assets - (asset_val / 2))
+                            deceased_assets = max(0, deceased_assets - (value_to_subtract / 2))
                         elif asset.asset_origin.value == "PERSONAL_PROPERTY" and asset.determine_owner(input_data.matrimonial_regime, input_data.marriage_date) == "DECEASED":
-                             deceased_assets = max(0, deceased_assets - asset_val)
+                             deceased_assets = max(0, deceased_assets - value_to_subtract)
                         
                         break
             

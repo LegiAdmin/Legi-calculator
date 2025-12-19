@@ -298,12 +298,15 @@
             try {
                 // Load golden scenarios from static file
                 const scenariosRes = await fetch('/static/tests/golden_scenarios.json');
+                let goldenScenariosData;
+
                 if (!scenariosRes.ok) {
                     // Try from API
                     const apiRes = await fetch('/api/v1/golden-scenarios/');
                     if (apiRes.ok) {
                         goldenScenariosData = await apiRes.json();
                     } else {
+                        // Fallback mechanism removed as static file is not served
                         throw new Error('Impossible de charger les scénarios golden');
                     }
                 } else {
