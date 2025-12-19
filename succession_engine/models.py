@@ -20,8 +20,10 @@ class TaxBracket(models.Model):
     relationship = models.CharField(max_length=50, choices=[
         ('CHILD', 'Child/Parent'),
         ('SIBLING', 'Sibling'),
+        ('NEPHEW_NIECE', 'Nephew/Niece'),
         ('OTHER', 'Other')
     ], default='CHILD')
+
     min_amount = models.DecimalField(max_digits=12, decimal_places=2)
     max_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, help_text="Leave empty for infinity")
     rate = models.DecimalField(max_digits=5, decimal_places=4, help_text="e.g. 0.05 for 5%")
@@ -37,7 +39,8 @@ class Allowance(models.Model):
     relationship = models.CharField(max_length=50, choices=[
         ('CHILD', 'Child/Parent'),
         ('SIBLING', 'Sibling'),
-        ('OTHER', 'Other'), # Nephews, etc.
+        ('OTHER', 'Other'), # Non-relatives
+        ('NEPHEW_NIECE', 'Nephew/Niece'),
         ('SPOUSE', 'Spouse/Partner')
     ])
     amount = models.DecimalField(max_digits=12, decimal_places=2)

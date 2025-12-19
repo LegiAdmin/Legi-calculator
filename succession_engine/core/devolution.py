@@ -603,8 +603,12 @@ class HeirShareCalculator:
             else:
                 souches[souche_id].append(ggc)
         
-        for heir in other_heirs:
-            souches[heir.id] = [heir]
+        # Only consider other heirs if no descendants found (souches empty)
+        # And strictly exclude non-relatives (OTHER) from legal succession
+        if not souches:
+            for heir in other_heirs:
+                if heir.relationship != HeirRelation.OTHER:
+                    souches[heir.id] = [heir]
         
         # PRUNE SOUCHES containing only renouncing heirs (without representation)
         # If an heir renounces but has descendants representing them, the souche remains valid
@@ -632,11 +636,30 @@ class HeirShareCalculator:
                     heir_shares[heir.id] = individual_share
         else:
             # Fallback for other cases (e.g. no descendants, strict equality)
-            # Filter renouncing heirs
+            # Filter renouncing heirs AND non-legal heirs (friends, etc.)
+            # Legal heirs are: Children, Grandchildren, Parents, Siblings, Spouse, Nephews
+            # 'OTHER' usually implies non-relative or distant relative not handled by default logic
+            
+            allowed_relations = [
+                HeirRelation.CHILD, HeirRelation.GRANDCHILD, 
+                HeirRelation.PARENT, HeirRelation.SIBLING, 
+                HeirRelation.SPOUSE, HeirRelation.PARTNER, 
+                HeirRelation.NEPHEW_NIECE
+            ]
+            
             active_heirs = [
                 h for h in heirs 
                 if getattr(h, 'acceptance_option', 'PURE_SIMPLE') != 'RENUNCIATION'
+                and h.relationship in allowed_relations
             ]
+            
+            # UX Fallback: If no legal heirs found, assume any non-renouncing member (e.g. Friend) is the intended heir
+            # This covers "Sole Legatees" simulated without explicit Will
+            if not active_heirs:
+                active_heirs = [
+                    h for h in heirs 
+                    if getattr(h, 'acceptance_option', 'PURE_SIMPLE') != 'RENUNCIATION'
+                ]
             
             num_heirs = len(active_heirs)
             share_percent = 1.0 / num_heirs if num_heirs > 0 else 0

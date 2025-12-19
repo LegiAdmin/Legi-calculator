@@ -1131,8 +1131,7 @@
                         {
                             "asset_id": "patrimoine",
                             "beneficiary_id": "ami",
-                            "amount": 50000,
-                            "bequest_type": "SPECIFIC"
+                            "share_percentage": 10.0
                         }
                     ]
                 }

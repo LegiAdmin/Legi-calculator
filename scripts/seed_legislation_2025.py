@@ -21,7 +21,8 @@ print("💶 Création des abattements 2025...")
 allowances = [
     {'relationship': 'CHILD', 'amount': 100000.00},  # Enfants et ascendants
     {'relationship': 'SIBLING', 'amount': 15932.00},  # Frères et sœurs
-    {'relationship': 'OTHER', 'amount': 1594.00},     # Neveux, nièces, autres
+    {'relationship': 'OTHER', 'amount': 1594.00},     # Non-parents
+    {'relationship': 'NEPHEW_NIECE', 'amount': 7967.00}, # Neveux et nièces (Art. 779 V CGI)
     {'relationship': 'SPOUSE', 'amount': 999999999.00},  # Conjoint (exonéré)
 ]
 
@@ -67,6 +68,20 @@ for bracket in sibling_brackets:
     )
     max_display = f"{bracket['max_amount']:,.0f}€" if bracket['max_amount'] else "∞"
     print(f"    {bracket['min_amount']:>10,.0f}€ - {max_display:>15} : {bracket['rate']*100:>5.1f}%")
+
+# Barème neveux et nièces - 2025 (Art. 777 CGI Tableau III)
+print("\n  → Neveux et nièces")
+nephew_brackets = [
+    {'min_amount': 0, 'max_amount': None, 'rate': 0.55},
+]
+
+for bracket in nephew_brackets:
+    TaxBracket.objects.create(
+        legislation=legislation,
+        relationship='NEPHEW_NIECE',
+        **bracket
+    )
+    print(f"    Taux unique: {bracket['rate']*100:.0f}%")
 
 # Barème autres (neveux, nièces, non-parents) - 2025
 print("\n  → Autres (neveux, nièces, non-parents)")

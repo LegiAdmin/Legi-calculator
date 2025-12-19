@@ -160,10 +160,16 @@ class SuccessionCalculator:
         # Ideally, we should track which asset goes to whom, but simplified devolution assumes universality.
         total_professional_exemption = self._calculate_global_exemption(input_data.assets)
         
+        spouse_heir = next((h for h in heirs if h.relationship in [HeirRelation.SPOUSE, HeirRelation.PARTNER]), None)
+        spouse_id = spouse_heir.id if spouse_heir else None
+
         heirs_breakdown, total_tax = self._calculate_taxation_and_breakdown(
             heirs, heir_shares, net_succession_assets,
             reportable_donations, specific_bequests_info,
-            total_professional_exemption
+            total_professional_exemption,
+            spouse_id=spouse_id,
+            usufruct_value=share_calculator.usufruct_value if share_calculator.spouse_has_usufruct else 0.0,
+            has_usufruct=share_calculator.spouse_has_usufruct
         )
         
         calculation_steps.append(CalculationStep(
@@ -280,18 +286,37 @@ class SuccessionCalculator:
         net_succession_assets: float,
         reportable_donations: List[Dict],
         specific_bequests_info: List[Dict],
-        total_professional_exemption: float = 0.0
+        total_professional_exemption: float = 0.0,
+        spouse_id: str = None,
+        usufruct_value: float = 0.0,
+        has_usufruct: bool = False
     ) -> Tuple[List[HeirBreakdown], float]:
         """
         Calculate taxation for each heir and build complete breakdown.
         """
         heirs_breakdown = []
         total_tax = 0.0
+        
+        # Calculate total value of specific bequests (charged to estate)
+        bequests_total_value_sum = sum(b['value'] for b in specific_bequests_info)
+        
+        # Determine distributable residue for legal heirs
+        # Legal shares apply to the residue (Active Assets - Liabilities - Specific Bequests)
+        distributable_residue = max(0.0, net_succession_assets - bequests_total_value_sum)
 
         for heir in heirs:
             # Base share from devolution
             share_percent = heir_shares.get(heir.id, 0)
-            gross_share = net_succession_assets * share_percent
+            gross_share = distributable_residue * share_percent
+            
+            # USUFRUCT ADJUSTMENT
+            if has_usufruct and usufruct_value > 0:
+                if heir.id == spouse_id:
+                    # Spouse gets the Usufruct Value added to their share (which might be 0% in PP)
+                    gross_share += usufruct_value
+                elif heir.relationship == HeirRelation.CHILD: # Assuming children are the bare owners
+                    # Deduct usufruct value from bare owners proportionally
+                    gross_share -= usufruct_value * share_percent
             
             # IMPUTATION: Deduct prior donations from heir's share (Art. 843 CC)
             heir_donations = [d for d in reportable_donations if d['beneficiary_id'] == heir.id]
@@ -417,6 +442,7 @@ class SuccessionCalculator:
             heirs_breakdown.append(HeirBreakdown(
                 id=heir.id,
                 name=heir.id,  # Front-end should send readable name as ID
+                relationship=heir.relationship,  # Field added for conformity
                 legal_share_percent=share_percent * 100,  # Legal share from devolution (should total 100%)
                 gross_share_value=total_civil_value, # Civil value (includes bequests)
                 taxable_base=tax_details.net_taxable,
