@@ -168,7 +168,7 @@
         async function loadScenarios() {
             const list = document.getElementById('scenarioList');
             try {
-                const res = await fetch('/api/scenarios/');
+                const res = await fetch('/api/v1/scenarios/');
                 const scenarios = await res.json();
 
                 if (scenarios.length === 0) {
@@ -201,7 +201,7 @@
 
             try {
                 const json = JSON.parse(inputData);
-                const res = await fetch('/api/scenarios/', {
+                const res = await fetch('/api/v1/scenarios/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -240,7 +240,7 @@
                 const scenariosRes = await fetch('/static/tests/golden_scenarios.json');
                 if (!scenariosRes.ok) {
                     // Try from API
-                    const apiRes = await fetch('/api/golden-scenarios/');
+                    const apiRes = await fetch('/api/v1/golden-scenarios/');
                     if (apiRes.ok) {
                         goldenScenariosData = await apiRes.json();
                     } else {
@@ -261,7 +261,7 @@
                     progressBar.style.width = `${((i + 1) / scenarios.length) * 100}%`;
 
                     try {
-                        const response = await fetch('/api/simulate/', {
+                        const response = await fetch('/api/v1/simulate/', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -386,7 +386,7 @@
                 `;
 
                 // Call API
-                const response = await fetch('/api/simulate/', {
+                const response = await fetch('/api/v1/simulate/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
