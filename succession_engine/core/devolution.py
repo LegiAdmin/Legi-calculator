@@ -152,6 +152,30 @@ class HeirShareCalculator:
         self.bare_ownership_value = 0.0
         self.spouse_birth_date = None
         self.has_stepchildren = False
+        
+        # Phase D: Track applied and excluded rules for audit trail
+        self.applied_rule_ids: List[str] = []
+        self.excluded_rule_ids: List[Dict] = []  # {rule_id, reason, explanation}
+    
+    def add_applied_rule(self, rule_id: str):
+        """Track an applied rule for explicability."""
+        if rule_id not in self.applied_rule_ids:
+            self.applied_rule_ids.append(rule_id)
+    
+    def add_excluded_rule(self, rule_id: str, reason: str, explanation: str = ""):
+        """Track an excluded rule with justification for audit."""
+        self.excluded_rule_ids.append({
+            "rule_id": rule_id,
+            "reason": reason,
+            "explanation": explanation
+        })
+    
+    def get_rule_tracking(self) -> Dict:
+        """Get tracking info for enrichment by ExplainerService."""
+        return {
+            "rule_ids": self.applied_rule_ids.copy(),
+            "excluded_rule_ids": self.excluded_rule_ids.copy()
+        }
     
     def calculate(self, heirs: List, wishes, net_succession_assets: float) -> Dict[str, float]:
         """
@@ -218,12 +242,25 @@ class HeirShareCalculator:
         children = [h for h in heirs if h.relationship == HeirRelation.CHILD]
         
         if choice == SpouseChoiceType.USUFRUCT:
+            self.add_applied_rule("RULE_SPOUSE_OPTION_USUFRUCT")
+            self.add_excluded_rule(
+                "RULE_SPOUSE_OPTION_QUARTER", 
+                "USER_CHOICE", 
+                "Le conjoint a opté pour l'usufruit"
+            )
             heir_shares = self._apply_usufruct_option(
                 heirs, spouse, net_succession_assets, representation_map
             )
         elif choice == SpouseChoiceType.QUARTER_OWNERSHIP:
+            self.add_applied_rule("RULE_SPOUSE_OPTION_QUARTER")
+            self.add_excluded_rule(
+                "RULE_SPOUSE_OPTION_USUFRUCT", 
+                "USER_CHOICE", 
+                "Le conjoint a opté pour 1/4 en pleine propriété"
+            )
             heir_shares = self._apply_quarter_ownership(spouse, children)
         elif choice == SpouseChoiceType.DISPOSABLE_QUOTA:
+            self.add_applied_rule("RULE_SPOUSE_OPTION_QUARTER")  # Similar treatment
             heir_shares = self._apply_disposable_quota(wishes, spouse, children)
         
         return heir_shares
@@ -365,6 +402,9 @@ class HeirShareCalculator:
                 # Spouse is sole heir
                 heir_shares[spouse.id] = 1.0
                 self.spouse_has_usufruct = False
+                self.add_applied_rule("RULE_SPOUSE_EXEMPT")
+                self.add_excluded_rule("RULE_CHILD_HEIR", "EXCLUDED_BY_ORDER", "Pas de descendants")
+                self.add_excluded_rule("RULE_SIBLING_HEIR", "EXCLUDED_BY_ORDER", "Pas de collatéraux")
                 return heir_shares
             else:
                 # Spouse with siblings: spouse gets 1/2 in full ownership (Art. 757-2)
@@ -373,7 +413,10 @@ class HeirShareCalculator:
                 sibling_share = 0.5 / len(siblings)
                 for sibling in siblings:
                     heir_shares[sibling.id] = sibling_share
+                    self.add_applied_rule("RULE_SIBLING_HEIR")
                 self.spouse_has_usufruct = False
+                self.add_applied_rule("RULE_SPOUSE_EXEMPT")
+                self.add_excluded_rule("RULE_CHILD_HEIR", "EXCLUDED_BY_ORDER", "Pas de descendants")
                 return heir_shares
         
         # Spouse with parents (no children): Art. 757-1 CC

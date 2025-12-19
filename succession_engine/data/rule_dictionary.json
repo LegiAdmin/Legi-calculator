@@ -1,0 +1,295 @@
+{
+    "version": "2025.1",
+    "language": "fr",
+    "description": "Dictionnaire des règles pour l'explicabilité des calculs de succession",
+    "rules": {
+        "STEP_LIQUIDATION": {
+            "what": "Détermination de la masse successorale après liquidation du régime matrimonial",
+            "why": "Le régime matrimonial définit ce qui appartient au défunt et ce qui revient au conjoint survivant",
+            "legal_basis": [
+                "Art. 1400+ Code civil"
+            ],
+            "category": "LIQUIDATION"
+        },
+        "STEP_DEVOLUTION": {
+            "what": "Identification des héritiers et calcul de leurs quotes-parts",
+            "why": "La loi établit un ordre de priorité entre les héritiers selon leur lien avec le défunt",
+            "legal_basis": [
+                "Art. 734-755 Code civil"
+            ],
+            "category": "DEVOLUTION"
+        },
+        "STEP_RESERVE": {
+            "what": "Calcul de la réserve héréditaire et de la quotité disponible",
+            "why": "La réserve héréditaire protège les héritiers réservataires d'une déshérence totale",
+            "legal_basis": [
+                "Art. 912-930 Code civil"
+            ],
+            "category": "RESERVE"
+        },
+        "STEP_FISCAL": {
+            "what": "Calcul des droits de succession par héritier",
+            "why": "Chaque héritier est taxé individuellement selon son lien de parenté et sa part",
+            "legal_basis": [
+                "Art. 777-787 CGI"
+            ],
+            "category": "FISCAL"
+        },
+        "RULE_REGIME_SEPARATION": {
+            "what": "Application du régime de séparation de biens",
+            "why": "Chaque époux conserve la propriété exclusive de ses biens personnels",
+            "legal_basis": [
+                "Art. 1536-1543 Code civil"
+            ],
+            "category": "LIQUIDATION"
+        },
+        "RULE_REGIME_COMMUNAUTE_REDUITE": {
+            "what": "Application du régime légal (communauté réduite aux acquêts)",
+            "why": "Les biens acquis pendant le mariage sont communs et partagés 50/50",
+            "legal_basis": [
+                "Art. 1400-1491 Code civil"
+            ],
+            "category": "LIQUIDATION"
+        },
+        "RULE_REGIME_COMMUNAUTE_UNIVERSELLE": {
+            "what": "Application du régime de communauté universelle",
+            "why": "Tous les biens sont communs, y compris ceux possédés avant le mariage",
+            "legal_basis": [
+                "Art. 1526 Code civil"
+            ],
+            "category": "LIQUIDATION"
+        },
+        "RULE_PRECIPUT": {
+            "what": "Application de la clause de préciput",
+            "why": "Le conjoint survivant prélève certains biens avant le partage de la succession",
+            "legal_basis": [
+                "Art. 1515 Code civil"
+            ],
+            "category": "LIQUIDATION"
+        },
+        "RULE_FULL_ATTRIBUTION": {
+            "what": "Application de la clause d'attribution intégrale",
+            "why": "Le conjoint survivant reçoit l'intégralité de la communauté",
+            "legal_basis": [
+                "Art. 1524 Code civil"
+            ],
+            "category": "LIQUIDATION"
+        },
+        "RULE_CHILD_HEIR": {
+            "what": "Enfant identifié comme héritier du 1er ordre",
+            "why": "Les descendants sont prioritaires dans l'ordre successoral",
+            "legal_basis": [
+                "Art. 734-735 Code civil"
+            ],
+            "category": "DEVOLUTION"
+        },
+        "RULE_SPOUSE_OPTION_USUFRUIT": {
+            "what": "Le conjoint opte pour l'usufruit de la totalité",
+            "why": "En présence d'enfants communs, le conjoint peut choisir l'usufruit ou 1/4 en PP",
+            "legal_basis": [
+                "Art. 757 Code civil"
+            ],
+            "category": "DEVOLUTION"
+        },
+        "RULE_SPOUSE_OPTION_QUARTER": {
+            "what": "Le conjoint opte pour 1/4 en pleine propriété",
+            "why": "Alternative à l'usufruit, donne une pleine propriété immédiate",
+            "legal_basis": [
+                "Art. 757 Code civil"
+            ],
+            "category": "DEVOLUTION"
+        },
+        "RULE_REPRESENTATION": {
+            "what": "Application de la représentation successorale",
+            "why": "Les descendants d'un héritier prédécédé prennent sa place dans la succession",
+            "legal_basis": [
+                "Art. 751-755 Code civil"
+            ],
+            "category": "DEVOLUTION"
+        },
+        "RULE_SIBLING_HEIR": {
+            "what": "Frère/sœur identifié comme héritier (3ème ordre)",
+            "why": "En l'absence de descendants et d'ascendants, les collatéraux privilégiés héritent",
+            "legal_basis": [
+                "Art. 737-742 Code civil"
+            ],
+            "category": "DEVOLUTION"
+        },
+        "RULE_NEPHEW_HEIR": {
+            "what": "Neveu/nièce identifié comme héritier",
+            "why": "Les neveux/nièces peuvent hériter par représentation ou en propre",
+            "legal_basis": [
+                "Art. 742 Code civil"
+            ],
+            "category": "DEVOLUTION"
+        },
+        "RULE_OTHER_HEIR": {
+            "what": "Légataire sans lien de parenté",
+            "why": "Toute personne peut recevoir par testament dans la limite de la quotité disponible",
+            "legal_basis": [
+                "Art. 893+ Code civil"
+            ],
+            "category": "DEVOLUTION"
+        },
+        "RULE_RESERVE_1_CHILD": {
+            "what": "Réserve héréditaire avec 1 enfant = 1/2",
+            "why": "Un enfant a droit à la moitié du patrimoine, l'autre moitié est disponible",
+            "legal_basis": [
+                "Art. 913 Code civil"
+            ],
+            "category": "RESERVE"
+        },
+        "RULE_RESERVE_2_CHILDREN": {
+            "what": "Réserve héréditaire avec 2 enfants = 2/3",
+            "why": "Deux enfants se partagent 2/3 du patrimoine, 1/3 est disponible",
+            "legal_basis": [
+                "Art. 913 Code civil"
+            ],
+            "category": "RESERVE"
+        },
+        "RULE_RESERVE_3_PLUS_CHILDREN": {
+            "what": "Réserve héréditaire avec 3+ enfants = 3/4",
+            "why": "Trois enfants ou plus se partagent 3/4 du patrimoine, 1/4 est disponible",
+            "legal_basis": [
+                "Art. 913 Code civil"
+            ],
+            "category": "RESERVE"
+        },
+        "RULE_ALLOWANCE_CHILD": {
+            "what": "Abattement de 100 000 € par enfant",
+            "why": "Chaque enfant bénéficie d'un abattement sur sa part avant calcul des droits",
+            "legal_basis": [
+                "Art. 779 I CGI"
+            ],
+            "category": "FISCAL"
+        },
+        "RULE_ALLOWANCE_SIBLING": {
+            "what": "Abattement de 15 932 € par frère/sœur",
+            "why": "Abattement réduit pour les collatéraux privilégiés",
+            "legal_basis": [
+                "Art. 779 IV CGI"
+            ],
+            "category": "FISCAL"
+        },
+        "RULE_ALLOWANCE_NEPHEW": {
+            "what": "Abattement de 7 967 € par neveu/nièce",
+            "why": "Abattement pour les collatéraux au 3ème degré",
+            "legal_basis": [
+                "Art. 779 V CGI"
+            ],
+            "category": "FISCAL"
+        },
+        "RULE_ALLOWANCE_OTHER": {
+            "what": "Abattement de 1 594 € pour les tiers",
+            "why": "Abattement minimal pour les personnes sans lien de parenté",
+            "legal_basis": [
+                "Art. 779 VI CGI"
+            ],
+            "category": "FISCAL"
+        },
+        "RULE_ALLOWANCE_DISABILITY": {
+            "what": "Abattement supplémentaire de 159 325 € pour handicap",
+            "why": "Abattement cumulable avec l'abattement de parenté pour les héritiers handicapés",
+            "legal_basis": [
+                "Art. 779 II CGI"
+            ],
+            "category": "FISCAL"
+        },
+        "RULE_SPOUSE_EXEMPT": {
+            "what": "Exonération totale du conjoint/partenaire PACS",
+            "why": "Le conjoint survivant et le partenaire PACS sont exonérés de droits de succession",
+            "legal_basis": [
+                "Art. 796-0 bis CGI"
+            ],
+            "category": "FISCAL"
+        },
+        "RULE_TAX_BRACKET_CHILD": {
+            "what": "Application du barème ligne directe (5% à 45%)",
+            "why": "Les enfants bénéficient du barème le plus favorable",
+            "legal_basis": [
+                "Art. 777 CGI"
+            ],
+            "category": "FISCAL"
+        },
+        "RULE_TAX_BRACKET_SIBLING": {
+            "what": "Application du barème frères/sœurs (35% ou 45%)",
+            "why": "Taux intermédiaire pour les collatéraux privilégiés",
+            "legal_basis": [
+                "Art. 777 CGI"
+            ],
+            "category": "FISCAL"
+        },
+        "RULE_TAX_BRACKET_OTHER": {
+            "what": "Application du taux de 60%",
+            "why": "Taux maximum pour les personnes sans lien de parenté proche",
+            "legal_basis": [
+                "Art. 777 CGI"
+            ],
+            "category": "FISCAL"
+        },
+        "RULE_ADOPTION_SIMPLE_NO_CARE": {
+            "what": "Adopté simple sans soins continus taxé à 60%",
+            "why": "L'adoption simple sans secours et soins pendant minorité ne donne pas droit au barème enfant",
+            "legal_basis": [
+                "Art. 786 CGI"
+            ],
+            "category": "FISCAL"
+        },
+        "RULE_ADOPTION_SIMPLE_WITH_CARE": {
+            "what": "Adopté simple avec soins continus taxé comme enfant",
+            "why": "L'adoption simple avec secours et soins ininterrompus donne droit au barème ligne directe",
+            "legal_basis": [
+                "Art. 786 CGI"
+            ],
+            "category": "FISCAL"
+        },
+        "RULE_ADOPTION_PLENIERE": {
+            "what": "Adopté plénière taxé comme enfant biologique",
+            "why": "L'adoption plénière confère les mêmes droits qu'un enfant biologique",
+            "legal_basis": [
+                "Art. 368 Code civil"
+            ],
+            "category": "FISCAL"
+        },
+        "RULE_USUFRUCT_VALUATION": {
+            "what": "Valorisation fiscale de l'usufruit selon l'âge",
+            "why": "L'usufruit est valorisé en pourcentage selon le barème Art. 669 CGI",
+            "legal_basis": [
+                "Art. 669 CGI"
+            ],
+            "category": "FISCAL"
+        },
+        "RULE_DUTREIL_EXEMPTION": {
+            "what": "Exonération Pacte Dutreil 75%",
+            "why": "Les transmissions d'entreprises avec engagement de conservation bénéficient d'une exonération",
+            "legal_basis": [
+                "Art. 787 B CGI"
+            ],
+            "category": "FISCAL"
+        },
+        "RULE_LIFE_INSURANCE_BEFORE_70": {
+            "what": "Régime assurance-vie avant 70 ans",
+            "why": "Abattement de 152 500 € par bénéficiaire sur les primes versées avant 70 ans",
+            "legal_basis": [
+                "Art. 990 I CGI"
+            ],
+            "category": "FISCAL"
+        },
+        "RULE_LIFE_INSURANCE_AFTER_70": {
+            "what": "Régime assurance-vie après 70 ans",
+            "why": "Abattement global de 30 500 € sur les primes versées après 70 ans",
+            "legal_basis": [
+                "Art. 757 B CGI"
+            ],
+            "category": "FISCAL"
+        }
+    },
+    "exclusion_reasons": {
+        "NOT_APPLICABLE": "Condition non remplie",
+        "EXCLUDED_BY_ORDER": "Exclu par l'ordre successoral",
+        "USER_CHOICE": "Choix de l'utilisateur",
+        "RENUNCIATION": "Renonciation à la succession",
+        "PREDECEASE": "Prédécès sans représentation",
+        "INDIGNITY": "Indignité successorale"
+    }
+}

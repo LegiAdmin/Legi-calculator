@@ -48,10 +48,51 @@ class SimulateSuccessionView(APIView):
             calculator = SuccessionCalculator()
             result = calculator.run(simulation_input)
             
-            # 3. Return Result
-            # We convert the Pydantic output model to a dict
-            return Response(result.model_dump(), status=status.HTTP_200_OK)
+            # 3. Enrich with explanations from rule dictionary (decoupled presentation)
+            from succession_engine.services.explainer import explainer
+            result_dict = result.model_dump()
+            enriched_result = explainer.enrich_output(result_dict)
+            
+            # 4. Return Enriched Result
+            return Response(enriched_result, status=status.HTTP_200_OK)
             
         except Exception as e:
             # Handle unexpected errors during calculation
             return Response({"error": "Calculation failed", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class GoldenScenariosView(APIView):
+    """
+    API View to serve golden scenarios for testing.
+    Returns the golden_scenarios.json content for the simulator to run tests.
+    """
+    
+    @extend_schema(
+        responses={200: dict},
+        summary="Get golden test scenarios",
+        description="Returns all golden scenarios for automated and manual testing."
+    )
+    def get(self, request):
+        """
+        Returns the golden scenarios from the JSON file.
+        """
+        import json
+        from pathlib import Path
+        
+        scenarios_path = Path(__file__).parent.parent.parent / 'tests' / 'golden_scenarios.json'
+        
+        if not scenarios_path.exists():
+            return Response(
+                {"error": "Golden scenarios file not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        try:
+            with open(scenarios_path, 'r', encoding='utf-8') as f:
+                scenarios = json.load(f)
+            return Response(scenarios, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to load scenarios: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
