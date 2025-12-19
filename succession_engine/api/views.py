@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 from drf_spectacular.utils import extend_schema
 from pydantic import ValidationError
 
@@ -16,12 +17,14 @@ class ScenarioListView(ListCreateAPIView):
     """
     queryset = SimulationScenario.objects.all().order_by('-created_at')
     serializer_class = SimulationScenarioSerializer
+    permission_classes = [AllowAny]
 
 class SimulateSuccessionView(APIView):
     """
     API View to handle succession calculation requests.
     Accepts input data, triggers the orchestrator, and returns the calculation result.
     """
+    permission_classes = [AllowAny]
     
     @extend_schema(
         request=SimulationInput,
@@ -66,6 +69,7 @@ class GoldenScenariosView(APIView):
     API View to serve golden scenarios for testing.
     Returns the golden_scenarios.json content for the simulator to run tests.
     """
+    permission_classes = [AllowAny]
     
     @extend_schema(
         responses={200: dict},
