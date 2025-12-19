@@ -10,10 +10,13 @@
 ## 🚀 Fonctionnalités
 
 - **Calcul fiscal** : Droits de succession selon barèmes 2025
-- **Dévolution légale** : Art. 913+ Code civil
+- **Dévolution légale** : Art. 913+ Code civil, renonciation, représentation
+- **Usufruit** : Viager (Art. 669 I) et temporaire (Art. 669 II)
+- **Action en réduction** : Protection réserve héréditaire (Art. 920+)
+- **Assurance-vie** : Clauses bénéficiaires démembrées
 - **Explicabilité** : Chaque étape documentée avec base légale
 - **API REST** : Endpoints pour simulation et scénarios
-- **Tests E2E** : 25 scénarios golden validés
+- **Tests** : 65 tests unitaires + 25 scénarios golden E2E
 
 ## 📦 Installation
 
