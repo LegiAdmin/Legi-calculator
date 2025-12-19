@@ -25,8 +25,18 @@ Certaines questions s'appliquent à **tous** les types de biens (Immobilier, Meu
 ### 2.1 Mode de Détention (Démembrement)
 *   [ ] Select "Mode" : Pleine Propriété, Usufruit, Nue-Propriété, Indivision.
 *   [ ] Si **Démembrement** (Usufruit/Nue-Propriété) :
-    *   Select "Type" : Viager (défaut) ou Temporaire.
-    *   Input requis selon type : "Date naissance usufruitier" ou "Durée".
+    *   Select "Type d'usufruit" :
+        - **Viager** (défaut) : Durée = vie de l'usufruitier
+        - **Temporaire** : Durée fixe en années
+    *   **Si Viager** → Input DatePicker "Date de naissance de l'usufruitier" (requis)
+    *   **Si Temporaire** → Input Number "Durée en années" (`usufruct_duration_years`)
+        - Validation : 1-70 ans
+        - Afficher dynamiquement le taux calculé : 
+          - 1-10 ans = 23%, 11-20 ans = 46%, 21-30 ans = 69%, etc.
+        - Tooltip : "Art. 669 II CGI : 23% par tranche de 10 ans"
+*   [ ] Afficher les valeurs calculées en temps réel :
+    - "Valeur usufruit : XX €" 
+    - "Valeur nue-propriété : XX €"
 
 ### 2.2 Droit de Retour (Biens de Famille - Art. 738-2 CC)
 *Concerne tout bien reçu par donation d'un parent (Immeuble, Bijoux, Parts...)*

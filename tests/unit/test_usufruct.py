@@ -84,3 +84,58 @@ class TestUsufructValueCalculation:
             usufruct_rate = UsufructValuator.get_usufruct_rate(age)
             bare_ownership_rate = UsufructValuator.get_bare_ownership_rate(age)
             assert usufruct_rate + bare_ownership_rate == 1.0
+
+
+class TestTemporaryUsufruct:
+    """Tests for temporary usufruct (Art. 669 II CGI)."""
+    
+    def test_temporary_usufruct_5_years(self):
+        """5 years = 1 period = 23%."""
+        from succession_engine.rules.usufruct import UsufructValuator
+        
+        usufruct_value, bare_ownership_value, rate = UsufructValuator.calculate_temporary_usufruct(
+            total_value=100000, duration_years=5
+        )
+        
+        assert rate == 0.23
+        assert usufruct_value == pytest.approx(23000, rel=0.01)
+        assert bare_ownership_value == pytest.approx(77000, rel=0.01)
+    
+    def test_temporary_usufruct_15_years(self):
+        """15 years = 2 periods = 46%."""
+        from succession_engine.rules.usufruct import UsufructValuator
+        
+        usufruct_value, bare_ownership_value, rate = UsufructValuator.calculate_temporary_usufruct(
+            total_value=100000, duration_years=15
+        )
+        
+        assert rate == 0.46
+        assert usufruct_value == pytest.approx(46000, rel=0.01)
+        assert bare_ownership_value == pytest.approx(54000, rel=0.01)
+    
+    def test_temporary_usufruct_25_years(self):
+        """25 years = 3 periods = 69%."""
+        from succession_engine.rules.usufruct import UsufructValuator
+        
+        usufruct_value, bare_ownership_value, rate = UsufructValuator.calculate_temporary_usufruct(
+            total_value=100000, duration_years=25
+        )
+        
+        assert rate == pytest.approx(0.69, rel=0.001)
+        assert usufruct_value == pytest.approx(69000, rel=0.01)
+        assert bare_ownership_value == pytest.approx(31000, rel=0.01)
+    
+    def test_temporary_usufruct_via_calculate_value(self):
+        """Test that calculate_value routes correctly to temporary."""
+        from succession_engine.rules.usufruct import UsufructValuator
+        
+        usufruct_value, bare_ownership_value, rate = UsufructValuator.calculate_value(
+            total_value=200000,
+            duration_years=10,
+            usufruct_type="TEMPORAIRE"
+        )
+        
+        # 10 years = 1 period = 23%
+        assert rate == 0.23
+        assert usufruct_value == pytest.approx(46000, rel=0.01)
+
