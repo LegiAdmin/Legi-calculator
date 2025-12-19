@@ -290,6 +290,14 @@
                 "Art. 805-808 Code civil"
             ],
             "category": "DEVOLUTION"
+        },
+        "RULE_REDUCTION": {
+            "what": "Action en réduction des libéralités excessives",
+            "why": "Les donations et legs qui dépassent la quotité disponible peuvent être réduits pour reconstituer la réserve héréditaire.",
+            "legal_basis": [
+                "Art. 920-930 Code civil"
+            ],
+            "category": "RESERVE"
         }
     },
     "exclusion_reasons": {
