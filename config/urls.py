@@ -3,8 +3,13 @@ from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
+from succession_engine.views import SimulatorView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    
+    # Simulator UI
+    path('simulator/', SimulatorView.as_view(), name='simulator'),
     
     # API Endpoints
     path('api/v1/', include('succession_engine.api.urls')),
