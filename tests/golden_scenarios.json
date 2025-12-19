@@ -1,1257 +1,271 @@
 {
-    "version": "2025.1",
-    "description": "Golden scenarios for succession engine testing",
+    "version": "2025.2-CHAOS",
+    "description": "Scénarios ultra-complexes pour validation technique finale",
     "scenarios": [
         {
-            "id": "SC001",
-            "name": "Enfant unique 500k€",
-            "category": "BASE",
-            "description": "Cas simple: 1 enfant hérite de 500k€ en séparation de biens",
+            "id": "SC_CHAOS_1",
+            "name": "L'Empire Recomposé (SC_CHAOS_1)",
+            "category": "COMPLEX",
+            "description": "Dutreil, Enfant handicapé (commun), Préciput sur résid. princ., Enfant lit précédent (Action Retranchement)",
             "tags": [
-                "enfant",
-                "ligne_directe",
-                "simple"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "maison",
-                        "estimated_value": 500000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "enfant1",
-                        "birth_date": "1990-01-01",
-                        "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL"
-                }
-            },
-            "expected_output": {
-                "total_estate_value": 500000,
-                "total_tax_amount": 78194.35,
-                "heirs_breakdown": [
-                    {
-                        "id": "enfant1",
-                        "legal_share_percent": 100,
-                        "gross_share_value": 500000,
-                        "abatement_used": 100000,
-                        "taxable_base": 400000
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING",
-                "notes": "À valider avec calcul manuel"
-            }
-        },
-        {
-            "id": "SC002",
-            "name": "2 enfants égaux",
-            "category": "BASE",
-            "description": "2 enfants héritent à parts égales de 600k€",
-            "tags": [
-                "enfant",
-                "ligne_directe",
-                "partage"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "patrimoine",
-                        "estimated_value": 600000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "enfant1",
-                        "birth_date": "1990-01-01",
-                        "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    },
-                    {
-                        "id": "enfant2",
-                        "birth_date": "1992-06-15",
-                        "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL"
-                }
-            },
-            "expected_output": {
-                "total_estate_value": 600000,
-                "heirs_breakdown": [
-                    {
-                        "id": "enfant1",
-                        "legal_share_percent": 50,
-                        "gross_share_value": 300000,
-                        "abatement_used": 100000,
-                        "taxable_base": 200000
-                    },
-                    {
-                        "id": "enfant2",
-                        "legal_share_percent": 50,
-                        "gross_share_value": 300000,
-                        "abatement_used": 100000,
-                        "taxable_base": 200000
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING"
-            }
-        },
-        {
-            "id": "SC003",
-            "name": "3 enfants égaux",
-            "category": "BASE",
-            "description": "3 enfants héritent à parts égales de 900k€",
-            "tags": [
-                "enfant",
-                "ligne_directe",
-                "partage"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "patrimoine",
-                        "estimated_value": 900000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "enfant1",
-                        "birth_date": "1990-01-01",
-                        "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    },
-                    {
-                        "id": "enfant2",
-                        "birth_date": "1992-06-15",
-                        "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    },
-                    {
-                        "id": "enfant3",
-                        "birth_date": "1995-09-20",
-                        "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL"
-                }
-            },
-            "expected_output": {
-                "total_estate_value": 900000,
-                "heirs_breakdown": [
-                    {
-                        "id": "enfant1",
-                        "legal_share_percent": 33.33,
-                        "gross_share_value": 300000,
-                        "abatement_used": 100000,
-                        "taxable_base": 200000
-                    },
-                    {
-                        "id": "enfant2",
-                        "legal_share_percent": 33.33,
-                        "gross_share_value": 300000,
-                        "abatement_used": 100000,
-                        "taxable_base": 200000
-                    },
-                    {
-                        "id": "enfant3",
-                        "legal_share_percent": 33.33,
-                        "gross_share_value": 300000,
-                        "abatement_used": 100000,
-                        "taxable_base": 200000
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING"
-            }
-        },
-        {
-            "id": "SC004",
-            "name": "Conjoint seul (exonéré)",
-            "category": "BASE",
-            "description": "Conjoint survivant unique héritier - exonéré de droits",
-            "tags": [
-                "conjoint",
-                "exonération"
+                "dutreil",
+                "preciput",
+                "recomposee",
+                "handicap"
             ],
             "input": {
                 "matrimonial_regime": "COMMUNITY_LEGAL",
+                "matrimonial_advantages": {
+                    "has_preciput": true,
+                    "preciput_assets": [
+                        "RESIDENCE_PRINCIPALE"
+                    ]
+                },
                 "assets": [
                     {
-                        "id": "patrimoine",
-                        "estimated_value": 1000000,
+                        "id": "entreprise_familiale",
+                        "estimated_value": 3000000,
+                        "ownership_mode": "FULL_OWNERSHIP",
+                        "asset_origin": "PERSONAL_PROPERTY",
+                        "professional_exemption": {
+                            "exemption_type": "DUTREIL",
+                            "dutreil_is_collective": true,
+                            "dutreil_is_individual": true
+                        }
+                    },
+                    {
+                        "id": "residence_principale",
+                        "estimated_value": 800000,
+                        "ownership_mode": "FULL_OWNERSHIP",
+                        "asset_origin": "COMMUNITY_PROPERTY",
+                        "is_main_residence": true,
+                        "spouse_occupies_property": true
+                    },
+                    {
+                        "id": "portefeuille_titres",
+                        "estimated_value": 500000,
                         "ownership_mode": "FULL_OWNERSHIP",
                         "asset_origin": "COMMUNITY_PROPERTY"
                     }
                 ],
                 "members": [
                     {
-                        "id": "conjoint",
-                        "birth_date": "1960-05-15",
-                        "relationship": "SPOUSE",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL"
-                }
-            },
-            "expected_output": {
-                "total_tax_amount": 0,
-                "heirs_breakdown": [
-                    {
-                        "id": "conjoint",
-                        "legal_share_percent": 100,
-                        "tax_amount": 0
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING"
-            }
-        },
-        {
-            "id": "SC005",
-            "name": "Conjoint + 1 enfant (usufruit)",
-            "category": "BASE",
-            "description": "Conjoint opte pour usufruit, enfant reçoit nue-propriété",
-            "tags": [
-                "conjoint",
-                "enfant",
-                "usufruit"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "maison",
-                        "estimated_value": 400000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "conjoint",
-                        "birth_date": "1960-05-15",
-                        "relationship": "SPOUSE",
-                        "is_from_current_union": true,
-                        "is_disabled": false
+                        "id": "conjointe",
+                        "birth_date": "1960-01-01",
+                        "relationship": "SPOUSE"
                     },
                     {
-                        "id": "enfant1",
-                        "birth_date": "1990-01-01",
-                        "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL",
-                    "spouse_choice": {
-                        "choice": "USUFRUCT"
-                    }
-                }
-            },
-            "expected_output": {
-                "heirs_breakdown": [
-                    {
-                        "id": "conjoint",
-                        "tax_amount": 0
-                    },
-                    {
-                        "id": "enfant1",
-                        "legal_share_percent": 100
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING"
-            }
-        },
-        {
-            "id": "SC006",
-            "name": "Conjoint + 1 enfant (1/4 PP)",
-            "category": "BASE",
-            "description": "Conjoint opte pour 1/4 en pleine propriété",
-            "tags": [
-                "conjoint",
-                "enfant",
-                "quart_pp"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "maison",
-                        "estimated_value": 400000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "conjoint",
-                        "birth_date": "1960-05-15",
-                        "relationship": "SPOUSE",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    },
-                    {
-                        "id": "enfant1",
-                        "birth_date": "1990-01-01",
-                        "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL",
-                    "spouse_choice": {
-                        "choice": "QUARTER_OWNERSHIP"
-                    }
-                }
-            },
-            "expected_output": {
-                "heirs_breakdown": [
-                    {
-                        "id": "conjoint",
-                        "legal_share_percent": 25,
-                        "gross_share_value": 100000,
-                        "tax_amount": 0
-                    },
-                    {
-                        "id": "enfant1",
-                        "legal_share_percent": 75,
-                        "gross_share_value": 300000
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING"
-            }
-        },
-        {
-            "id": "SC007",
-            "name": "Frère/Sœur unique",
-            "category": "BASE",
-            "description": "Sans descendants ni ascendants, frère hérite",
-            "tags": [
-                "fratrie",
-                "collatéraux"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "patrimoine",
-                        "estimated_value": 200000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "frere",
-                        "birth_date": "1985-03-20",
-                        "relationship": "SIBLING",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL"
-                }
-            },
-            "expected_output": {
-                "heirs_breakdown": [
-                    {
-                        "id": "frere",
-                        "legal_share_percent": 100,
-                        "abatement_used": 15932
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING"
-            }
-        },
-        {
-            "id": "SC008",
-            "name": "Neveu/Nièce unique",
-            "category": "BASE",
-            "description": "Neveu hérite sans autres héritiers",
-            "tags": [
-                "neveu",
-                "collatéraux"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "patrimoine",
-                        "estimated_value": 100000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "neveu",
-                        "birth_date": "2000-01-01",
-                        "relationship": "NEPHEW_NIECE",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL"
-                }
-            },
-            "expected_output": {
-                "heirs_breakdown": [
-                    {
-                        "id": "neveu",
-                        "legal_share_percent": 100,
-                        "abatement_used": 7967
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING"
-            }
-        },
-        {
-            "id": "SC009",
-            "name": "Tiers (OTHER) - 60%",
-            "category": "BASE",
-            "description": "Légataire sans lien de parenté, taxé à 60%",
-            "tags": [
-                "tiers",
-                "60_pourcent"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "patrimoine",
-                        "estimated_value": 100000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "ami",
+                        "id": "enfant_precedent",
                         "birth_date": "1980-01-01",
-                        "relationship": "OTHER",
-                        "is_from_current_union": false,
-                        "is_disabled": false
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL"
-                }
-            },
-            "expected_output": {
-                "heirs_breakdown": [
-                    {
-                        "id": "ami",
-                        "legal_share_percent": 100,
-                        "abatement_used": 1594
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING",
-                "notes": "Taux flat 60% après abattement 1594€"
-            }
-        },
-        {
-            "id": "SC010",
-            "name": "Partenaire PACS (exonéré)",
-            "category": "BASE",
-            "description": "Partenaire PACS exonéré comme conjoint",
-            "tags": [
-                "pacs",
-                "exonération"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "patrimoine",
-                        "estimated_value": 500000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "partenaire",
-                        "birth_date": "1970-01-01",
-                        "relationship": "PARTNER",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL"
-                }
-            },
-            "expected_output": {
-                "total_tax_amount": 0,
-                "heirs_breakdown": [
-                    {
-                        "id": "partenaire",
-                        "tax_amount": 0
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING"
-            }
-        },
-        {
-            "id": "SC011",
-            "name": "Adoption simple sans soins continus",
-            "category": "COMPLEX",
-            "description": "Enfant adopté simple taxé comme OTHER (60%)",
-            "tags": [
-                "adoption",
-                "taxation_majorée"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "patrimoine",
-                        "estimated_value": 300000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "enfant_adopte",
-                        "birth_date": "2000-01-01",
                         "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false,
-                        "adoption_type": "simple",
-                        "has_received_continuous_care": false
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL"
-                }
-            },
-            "expected_output": {
-                "heirs_breakdown": [
+                        "is_from_current_union": false
+                    },
                     {
-                        "id": "enfant_adopte",
-                        "abatement_used": 1594
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING",
-                "notes": "Taxé comme OTHER car adoption simple sans soins"
-            }
-        },
-        {
-            "id": "SC012",
-            "name": "Adoption simple avec soins continus",
-            "category": "COMPLEX",
-            "description": "Enfant adopté simple avec soins = taxé comme enfant",
-            "tags": [
-                "adoption",
-                "soins_continus"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "patrimoine",
-                        "estimated_value": 300000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "enfant_adopte",
-                        "birth_date": "2000-01-01",
-                        "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false,
-                        "adoption_type": "simple",
-                        "has_received_continuous_care": true
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL"
-                }
-            },
-            "expected_output": {
-                "heirs_breakdown": [
-                    {
-                        "id": "enfant_adopte",
-                        "abatement_used": 100000
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING",
-                "notes": "Taxé comme CHILD grâce aux soins continus"
-            }
-        },
-        {
-            "id": "SC013",
-            "name": "Handicap - Abattement cumulé",
-            "category": "COMPLEX",
-            "description": "Enfant handicapé: 100k + 159.3k = 259.3k abattement",
-            "tags": [
-                "handicap",
-                "abattement_spécial"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "patrimoine",
-                        "estimated_value": 500000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "enfant_handicape",
-                        "birth_date": "1990-01-01",
+                        "id": "enfant_commun_handicape",
+                        "birth_date": "1995-01-01",
                         "relationship": "CHILD",
                         "is_from_current_union": true,
                         "is_disabled": true
                     }
                 ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL"
-                }
-            },
-            "expected_output": {
-                "heirs_breakdown": [
+                "donations": [
                     {
-                        "id": "enfant_handicape",
-                        "abatement_used": 259325
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING",
-                "notes": "100000 + 159325 = 259325"
-            }
-        },
-        {
-            "id": "SC014",
-            "name": "Représentation - Petits-enfants",
-            "category": "COMPLEX",
-            "description": "Petits-enfants représentent parent prédécédé",
-            "tags": [
-                "représentation",
-                "petits_enfants"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "patrimoine",
-                        "estimated_value": 400000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "enfant1",
-                        "birth_date": "1970-01-01",
-                        "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    },
-                    {
-                        "id": "petit_enfant1",
-                        "birth_date": "2000-01-01",
-                        "relationship": "GRANDCHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false,
-                        "represented_heir_id": "enfant_decede"
-                    },
-                    {
-                        "id": "petit_enfant2",
-                        "birth_date": "2002-01-01",
-                        "relationship": "GRANDCHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false,
-                        "represented_heir_id": "enfant_decede"
+                        "id": "don_ancien",
+                        "donation_type": "don_manuel",
+                        "beneficiary_name": "enfant_precedent",
+                        "beneficiary_relationship": "CHILD",
+                        "donation_date": "2015-01-01",
+                        "original_value": 200000,
+                        "current_estimated_value": 200000,
+                        "is_declared_to_tax": false
                     }
                 ],
                 "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL"
-                }
-            },
-            "expected_output": {
-                "heirs_breakdown": [
-                    {
-                        "id": "enfant1",
-                        "legal_share_percent": 50
-                    },
-                    {
-                        "id": "petit_enfant1",
-                        "legal_share_percent": 25
-                    },
-                    {
-                        "id": "petit_enfant2",
-                        "legal_share_percent": 25
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING",
-                "notes": "2 petits-enfants se partagent la souche du parent prédécédé"
-            }
-        },
-        {
-            "id": "SC015",
-            "name": "Famille recomposée",
-            "category": "COMPLEX",
-            "description": "Conjoint + enfant autre lit = pas d'usufruit total",
-            "tags": [
-                "famille_recomposée",
-                "conjoint",
-                "enfant_autre_lit"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "patrimoine",
-                        "estimated_value": 400000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "conjoint",
-                        "birth_date": "1965-01-01",
-                        "relationship": "SPOUSE",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    },
-                    {
-                        "id": "enfant_autre_lit",
-                        "birth_date": "1985-01-01",
-                        "relationship": "CHILD",
-                        "is_from_current_union": false,
-                        "is_disabled": false
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL",
-                    "spouse_choice": {
-                        "choice": "USUFRUCT"
-                    }
-                }
-            },
-            "expected_output": {
-                "heirs_breakdown": [
-                    {
-                        "id": "conjoint",
-                        "tax_amount": 0
-                    },
-                    {
-                        "id": "enfant_autre_lit",
-                        "legal_share_percent": 100
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING",
-                "notes": "Enfant d'un autre lit = pas d'attribution intégrale possible"
-            }
-        },
-        {
-            "id": "SC016",
-            "name": "Communauté réduite - Liquidation",
-            "category": "COMPLEX",
-            "description": "Régime légal: 50% communauté va au conjoint",
-            "tags": [
-                "communauté",
-                "liquidation"
-            ],
-            "input": {
-                "matrimonial_regime": "COMMUNITY_LEGAL",
-                "assets": [
-                    {
-                        "id": "maison",
-                        "estimated_value": 400000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "COMMUNITY_PROPERTY"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "conjoint",
-                        "birth_date": "1965-01-01",
-                        "relationship": "SPOUSE",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    },
-                    {
-                        "id": "enfant1",
-                        "birth_date": "1990-01-01",
-                        "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL",
+                    "has_spouse_donation": true,
                     "spouse_choice": {
                         "choice": "QUARTER_OWNERSHIP"
                     }
                 }
             },
             "expected_output": {
-                "total_estate_value": 200000
-            },
-            "validation": {
-                "status": "PENDING",
-                "notes": "Masse = 400k / 2 = 200k (part du défunt)"
+                "total_estate_value": 4500000,
+                "notes": "Vérifier surtout l'abattement Dutreil (base taxable entreprise = 750k vs 3M)"
             }
         },
         {
-            "id": "SC017",
-            "name": "Usufruit - Conjoint 65 ans",
+            "id": "SC_CHAOS_2",
+            "name": "Ingénierie & Renonciation (SC_CHAOS_2)",
             "category": "COMPLEX",
-            "description": "Valorisation usufruit à 40% pour 65 ans",
+            "description": "AV Démembrée (Usufruit B, NP A&C), Renonciation A -> A1+A2, Dettes déductibles",
             "tags": [
-                "usufruit",
-                "valorisation"
+                "assurance_vie",
+                "demembrement",
+                "renonciation",
+                "representation"
             ],
             "input": {
                 "matrimonial_regime": "SEPARATION",
                 "assets": [
                     {
-                        "id": "maison",
-                        "estimated_value": 500000,
+                        "id": "immobilier_locatif",
+                        "estimated_value": 1500000,
                         "ownership_mode": "FULL_OWNERSHIP",
                         "asset_origin": "PERSONAL_PROPERTY"
+                    },
+                    {
+                        "id": "av_demembree",
+                        "estimated_value": 2000000,
+                        "ownership_mode": "FULL_OWNERSHIP",
+                        "asset_origin": "PERSONAL_PROPERTY",
+                        "notes": [
+                            "Assurance Vie démembrée"
+                        ],
+                        "life_insurance_contract_type": "STANDARD",
+                        "premiums_before_70": 2000000,
+                        "life_insurance_beneficiaries": [
+                            {
+                                "beneficiary_id": "enfant_B",
+                                "share_percent": 100,
+                                "ownership_type": "USUFRUCT",
+                                "birth_date": "1980-01-01"
+                            },
+                            {
+                                "beneficiary_id": "petits_enfants_A",
+                                "share_percent": 50,
+                                "ownership_type": "BARE_OWNERSHIP"
+                            },
+                            {
+                                "beneficiary_id": "enfant_C",
+                                "share_percent": 50,
+                                "ownership_type": "BARE_OWNERSHIP"
+                            }
+                        ]
+                    }
+                ],
+                "members": [
+                    {
+                        "id": "enfant_A_renoncant",
+                        "birth_date": "1975-01-01",
+                        "relationship": "CHILD",
+                        "has_renounced": true,
+                        "renunciation_date": "2025-01-01"
+                    },
+                    {
+                        "id": "enfant_B_usufruitier",
+                        "birth_date": "1980-01-01",
+                        "relationship": "CHILD"
+                    },
+                    {
+                        "id": "enfant_C_nu_proprio",
+                        "birth_date": "1985-01-01",
+                        "relationship": "CHILD"
+                    },
+                    {
+                        "id": "jumeau_A1",
+                        "birth_date": "2010-01-01",
+                        "relationship": "GRANDCHILD",
+                        "represented_heir_id": "enfant_A_renoncant"
+                    },
+                    {
+                        "id": "jumeau_A2",
+                        "birth_date": "2010-01-01",
+                        "relationship": "GRANDCHILD",
+                        "represented_heir_id": "enfant_A_renoncant"
+                    }
+                ],
+                "debts": [
+                    {
+                        "id": "emprunt_in_fine",
+                        "amount": 500000,
+                        "debt_type": "Emprunt bancaire",
+                        "asset_origin": "PERSONAL_PROPERTY",
+                        "is_deductible": true
+                    }
+                ],
+                "wishes": {
+                    "testament_distribution": "LEGAL"
+                }
+            },
+            "expected_output": {
+                "notes": "Vérifier que la part de A va bien à A1 et A2 (représentation renonçant)"
+            }
+        },
+        {
+            "id": "SC_CHAOS_3",
+            "name": "Chaos Indivis & Universel (SC_CHAOS_3)",
+            "category": "COMPLEX",
+            "description": "Communauté Universelle, 10 biens indivis, Legs particulier tiers, Rappel donation-partage",
+            "tags": [
+                "indivision",
+                "communaute_universelle",
+                "legs_particulier"
+            ],
+            "input": {
+                "matrimonial_regime": "COMMUNITY_UNIVERSAL",
+                "matrimonial_advantages": {
+                    "has_full_attribution": true
+                },
+                "assets": [
+                    {
+                        "id": "appart_paris_indivis",
+                        "estimated_value": 1000000,
+                        "ownership_mode": "INDIVISION",
+                        "asset_origin": "COMMUNITY_PROPERTY",
+                        "indivision_details": {
+                            "withOthers": true,
+                            "othersShare": 50,
+                            "coOwners": [
+                                "Oncle Michel"
+                            ]
+                        }
+                    },
+                    {
+                        "id": "maison_vacances",
+                        "estimated_value": 500000,
+                        "ownership_mode": "FULL_OWNERSHIP",
+                        "asset_origin": "COMMUNITY_PROPERTY"
                     }
                 ],
                 "members": [
                     {
                         "id": "conjoint",
                         "birth_date": "1960-01-01",
-                        "relationship": "SPOUSE",
-                        "is_from_current_union": true,
-                        "is_disabled": false
+                        "relationship": "SPOUSE"
                     },
                     {
-                        "id": "enfant1",
+                        "id": "enfant_unique",
                         "birth_date": "1990-01-01",
-                        "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL",
-                    "spouse_choice": {
-                        "choice": "USUFRUCT"
-                    }
-                }
-            },
-            "expected_output": {
-                "spouse_details": {
-                    "usufruct_rate": 0.40,
-                    "usufruct_value": 200000,
-                    "bare_ownership_value": 300000
-                }
-            },
-            "validation": {
-                "status": "PENDING",
-                "notes": "Art. 669 CGI: 61-70 ans = 40% usufruit"
-            }
-        },
-        {
-            "id": "SC020",
-            "name": "Assurance-vie avant 70 ans",
-            "category": "ADVANCED",
-            "description": "Primes versées avant 70 ans - abattement 152.5k par bénéficiaire",
-            "tags": [
-                "assurance_vie",
-                "avant_70"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "patrimoine",
-                        "estimated_value": 100000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "enfant1",
-                        "birth_date": "1990-01-01",
-                        "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    }
-                ],
-                "life_insurances": [
-                    {
-                        "id": "av1",
-                        "beneficiary_id": "enfant1",
-                        "capital": 200000,
-                        "premiums_before_70": 200000,
-                        "premiums_after_70": 0,
-                        "subscriber_type": "DECEASED"
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL"
-                }
-            },
-            "expected_output": {
-                "heirs_breakdown": [
-                    {
-                        "id": "enfant1"
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING",
-                "notes": "Abattement 152 500€, taxe 20% puis 31.25%"
-            }
-        },
-        {
-            "id": "SC021",
-            "name": "Assurance-vie après 70 ans",
-            "category": "ADVANCED",
-            "description": "Primes après 70 ans - abattement global 30.5k",
-            "tags": [
-                "assurance_vie",
-                "apres_70"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "patrimoine",
-                        "estimated_value": 100000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "enfant1",
-                        "birth_date": "1990-01-01",
-                        "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    }
-                ],
-                "life_insurances": [
-                    {
-                        "id": "av1",
-                        "beneficiary_id": "enfant1",
-                        "capital": 100000,
-                        "premiums_before_70": 0,
-                        "premiums_after_70": 100000,
-                        "subscriber_type": "DECEASED"
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL"
-                }
-            },
-            "expected_output": {
-                "heirs_breakdown": [
-                    {
-                        "id": "enfant1"
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING",
-                "notes": "Art. 757 B: 30 500€ global puis droits succession normaux"
-            }
-        },
-        {
-            "id": "SC022",
-            "name": "Pacte Dutreil 75%",
-            "category": "ADVANCED",
-            "description": "Entreprise familiale avec Dutreil - 75% exonéré",
-            "tags": [
-                "dutreil",
-                "exonération_pro"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "entreprise",
-                        "estimated_value": 1000000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY",
-                        "professional_exemption": {
-                            "exemption_type": "DUTREIL"
-                        }
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "enfant1",
-                        "birth_date": "1990-01-01",
-                        "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL"
-                }
-            },
-            "expected_output": {
-                "heirs_breakdown": [
-                    {
-                        "id": "enfant1",
-                        "taxable_base": 150000
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING",
-                "notes": "1M × 25% = 250k taxable, -100k abatt = 150k base"
-            }
-        },
-        {
-            "id": "SC023",
-            "name": "Legs spécifique",
-            "category": "ADVANCED",
-            "description": "Testament avec legs particulier à un tiers",
-            "tags": [
-                "legs",
-                "testament"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "patrimoine",
-                        "estimated_value": 500000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "enfant1",
-                        "birth_date": "1990-01-01",
-                        "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false
+                        "relationship": "CHILD"
                     },
                     {
-                        "id": "ami",
+                        "id": "maitresse_legataire",
                         "birth_date": "1980-01-01",
-                        "relationship": "OTHER",
-                        "is_from_current_union": false,
-                        "is_disabled": false
+                        "relationship": "OTHER"
                     }
                 ],
                 "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "CUSTOM",
                     "specific_bequests": [
                         {
-                            "asset_id": "patrimoine",
-                            "beneficiary_id": "ami",
-                            "share_percentage": 10.0
+                            "asset_id": "appart_paris_indivis",
+                            "beneficiary_id": "maitresse_legataire",
+                            "share_percentage": 50
                         }
                     ]
-                }
-            },
-            "expected_output": {
-                "heirs_breakdown": [
+                },
+                "donations": [
                     {
-                        "id": "enfant1",
-                        "gross_share_value": 450000
-                    },
-                    {
-                        "id": "ami",
-                        "gross_share_value": 50000,
-                        "abatement_used": 1594
+                        "id": "don_partage_trans",
+                        "donation_type": "donation_partage",
+                        "beneficiary_name": "enfant_unique",
+                        "beneficiary_relationship": "CHILD",
+                        "donation_date": "2020-01-01",
+                        "original_value": 100000,
+                        "current_estimated_value": 150000
                     }
                 ]
             },
-            "validation": {
-                "status": "PENDING",
-                "notes": "Legs 50k à ami, reste à enfant"
-            }
-        },
-        {
-            "id": "SC024",
-            "name": "Nue-propriété reçue",
-            "category": "ADVANCED",
-            "description": "Défunt avait un bien en nue-propriété",
-            "tags": [
-                "démembrement",
-                "nue_propriété"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "maison",
-                        "estimated_value": 300000,
-                        "ownership_mode": "BARE_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY",
-                        "usufructuary_birth_date": "1945-01-01"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "enfant1",
-                        "birth_date": "1990-01-01",
-                        "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL"
-                }
-            },
             "expected_output": {
-                "heirs_breakdown": [
-                    {
-                        "id": "enfant1"
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING",
-                "notes": "NP valorisée selon âge usufruitier (80 ans = 80%)"
-            }
-        },
-        {
-            "id": "SC025",
-            "name": "Renonciation héritier",
-            "category": "ADVANCED",
-            "description": "Un enfant renonce, sa part va aux autres",
-            "tags": [
-                "renonciation"
-            ],
-            "input": {
-                "matrimonial_regime": "SEPARATION",
-                "assets": [
-                    {
-                        "id": "patrimoine",
-                        "estimated_value": 600000,
-                        "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "PERSONAL_PROPERTY"
-                    }
-                ],
-                "members": [
-                    {
-                        "id": "enfant1",
-                        "birth_date": "1990-01-01",
-                        "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false
-                    },
-                    {
-                        "id": "enfant2",
-                        "birth_date": "1992-01-01",
-                        "relationship": "CHILD",
-                        "is_from_current_union": true,
-                        "is_disabled": false,
-                        "has_renounced": true
-                    }
-                ],
-                "wishes": {
-                    "has_spouse_donation": false,
-                    "testament_distribution": "LEGAL"
-                }
-            },
-            "expected_output": {
-                "heirs_breakdown": [
-                    {
-                        "id": "enfant1",
-                        "legal_share_percent": 100,
-                        "gross_share_value": 600000
-                    }
-                ]
-            },
-            "validation": {
-                "status": "PENDING",
-                "notes": "Enfant2 renonce, enfant1 hérite de tout"
+                "notes": "Attribution intégrale joue ? Si oui, conjoint prend tout SAUF le legs ?"
             }
         }
     ]

@@ -24,40 +24,66 @@
         <div class="grid grid-cols-12 gap-6">
 
             <!-- Sidebar: Scenarios -->
-            <div class="col-span-12 lg:col-span-3 bg-white rounded-lg shadow-lg p-4">
+            <div class="col-span-12 lg:col-span-3 bg-white rounded-lg shadow-lg p-4 flex flex-col h-[800px]">
                 <h2 class="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
-                    <span>📋</span> Scénarios de Test
+                    <span>📚</span> Scénarios
                 </h2>
 
-                <!-- Test Status Badge -->
-                <div id="testStatusBadge" class="mb-4 p-3 bg-gray-100 rounded-lg hidden">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-semibold">Tests Golden</span>
-                        <span id="testStatusValue" class="text-sm font-bold">—</span>
-                    </div>
-                    <div class="w-full bg-gray-300 rounded-full h-2 mt-2">
-                        <div id="testProgressBar" class="bg-green-500 h-2 rounded-full" style="width: 0%"></div>
-                    </div>
-                </div>
-
-                <!-- Run All Tests Button -->
-                <button id="runAllTestsBtn"
-                    class="w-full mb-4 bg-purple-600 text-white py-2 px-3 rounded text-sm hover:bg-purple-700 transition flex items-center justify-center gap-2">
-                    🧪 Lancer tous les tests
-                </button>
-
-                <div id="scenarioList" class="space-y-2 mb-4 max-h-[400px] overflow-y-auto">
-                    <p class="text-gray-500 text-sm">Chargement...</p>
-                </div>
-
-                <div class="border-t pt-4">
-                    <h3 class="font-semibold mb-2 text-sm">Sauvegarder</h3>
-                    <input type="text" id="newScenarioName" placeholder="Nom du scénario"
-                        class="w-full p-2 border rounded mb-2 text-sm">
-                    <button id="saveScenarioBtn"
-                        class="w-full bg-green-600 text-white py-2 px-3 rounded text-sm hover:bg-green-700 transition">
-                        💾 Sauvegarder
+                <!-- Tabs Header -->
+                <div class="flex border-b mb-4">
+                    <button id="tabSavedBtn"
+                        class="flex-1 py-2 text-sm font-semibold text-blue-600 border-b-2 border-blue-600 focus:outline-none transition">
+                        💾 Sauvegardés
                     </button>
+                    <button id="tabGoldenBtn"
+                        class="flex-1 py-2 text-sm font-semibold text-gray-500 hover:text-blue-500 focus:outline-none transition">
+                        🧪 Golden Tests
+                    </button>
+                </div>
+
+                <!-- Tab Content: Saved Scenarios -->
+                <div id="tabSavedContent" class="flex-1 flex flex-col overflow-hidden">
+                    <div id="savedScenarioList" class="flex-1 overflow-y-auto space-y-2 mb-4 pr-1">
+                        <p class="text-gray-500 text-sm italic p-2">Chargement...</p>
+                    </div>
+
+                    <div class="border-t pt-4 mt-auto">
+                        <h3 class="font-semibold mb-2 text-sm">Nouveau Scénario</h3>
+                        <input type="text" id="newScenarioName" placeholder="Nom du scénario"
+                            class="w-full p-2 border rounded mb-2 text-sm">
+                        <button id="saveScenarioBtn"
+                            class="w-full bg-green-600 text-white py-2 px-3 rounded text-sm hover:bg-green-700 transition mb-2">
+                            💾 Sauvegarder
+                        </button>
+                        <button id="clearSavedBtn"
+                            class="w-full bg-red-100 text-red-600 py-1 px-3 rounded text-xs hover:bg-red-200 transition">
+                            🗑️ Tout supprimer
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Golden Tests -->
+                <div id="tabGoldenContent" class="hidden flex-1 flex flex-col overflow-hidden">
+                    <!-- Test Status Badge -->
+                    <div id="testStatusBadge" class="mb-4 p-3 bg-gray-100 rounded-lg hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-semibold">Progression</span>
+                            <span id="testStatusValue" class="text-sm font-bold">—</span>
+                        </div>
+                        <div class="w-full bg-gray-300 rounded-full h-2 mt-2">
+                            <div id="testProgressBar" class="bg-green-500 h-2 rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Run All Tests Button -->
+                    <button id="runAllTestsBtn"
+                        class="w-full mb-4 bg-purple-600 text-white py-2 px-3 rounded text-sm hover:bg-purple-700 transition flex items-center justify-center gap-2 shadow-sm">
+                        🧪 Lancer les Stress-Tests
+                    </button>
+
+                    <div id="goldenScenarioList" class="flex-1 overflow-y-auto space-y-2 pr-1">
+                        <p class="text-gray-500 text-sm italic p-2">Cliquez sur "Lancer" pour charger les tests.</p>
+                    </div>
                 </div>
             </div>
 
@@ -162,34 +188,60 @@
     </div>
 
     <script>
-        // Load Scenarios on Start
-        document.addEventListener('DOMContentLoaded', loadScenarios);
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSavedScenarios();
+        });
 
-        async function loadScenarios() {
-            const list = document.getElementById('scenarioList');
+        // Tabs Logic
+        const tabSavedBtn = document.getElementById('tabSavedBtn');
+        const tabGoldenBtn = document.getElementById('tabGoldenBtn');
+        const tabSavedContent = document.getElementById('tabSavedContent');
+        const tabGoldenContent = document.getElementById('tabGoldenContent');
+
+        tabSavedBtn.addEventListener('click', () => switchTab('saved'));
+        tabGoldenBtn.addEventListener('click', () => switchTab('golden'));
+
+        function switchTab(tab) {
+            if (tab === 'saved') {
+                tabSavedBtn.className = 'flex-1 py-2 text-sm font-semibold text-blue-600 border-b-2 border-blue-600 focus:outline-none transition';
+                tabGoldenBtn.className = 'flex-1 py-2 text-sm font-semibold text-gray-500 hover:text-blue-500 focus:outline-none transition';
+                tabSavedContent.classList.remove('hidden');
+                tabGoldenContent.classList.add('hidden');
+            } else {
+                tabSavedBtn.className = 'flex-1 py-2 text-sm font-semibold text-gray-500 hover:text-blue-500 focus:outline-none transition';
+                tabGoldenBtn.className = 'flex-1 py-2 text-sm font-semibold text-purple-600 border-b-2 border-purple-600 focus:outline-none transition';
+                tabSavedContent.classList.add('hidden');
+                tabGoldenContent.classList.remove('hidden');
+            }
+        }
+
+        // --- Saved Scenarios Logic ---
+
+        async function loadSavedScenarios() {
+            const list = document.getElementById('savedScenarioList');
             try {
                 const res = await fetch('/api/v1/scenarios/');
                 const scenarios = await res.json();
 
                 if (scenarios.length === 0) {
-                    list.innerHTML = '<p class="text-gray-400 text-sm italic">Aucun scénario sauvegardé.</p>';
+                    list.innerHTML = '<p class="text-gray-400 text-sm italic p-2">Aucun scénario sauvegardé.</p>';
                     return;
                 }
 
-                // Group scenarios by category (emoji in name)
                 list.innerHTML = scenarios.map(s => `
-                    <div class="p-3 border-2 rounded-lg hover:bg-blue-50 hover:border-blue-400 cursor-pointer group transition" 
-                         onclick='loadScenario(${JSON.stringify(s.input_data)})'>
+                    <div class="p-3 border rounded-lg hover:bg-blue-50 hover:border-blue-400 cursor-pointer group transition bg-white shadow-sm"
+                         onclick='loadScenarioInput(${JSON.stringify(s.input_data)})'>
                         <div class="font-semibold text-sm text-gray-800 group-hover:text-blue-700">${s.name}</div>
-                        <div class="text-xs text-gray-500 mt-1">${s.description || ''}</div>
+                        <div class="text-xs text-gray-500 mt-1">${new Date(s.created_at).toLocaleDateString()}</div>
                     </div>
                 `).join('');
             } catch (err) {
-                list.innerHTML = '<p class="text-red-500 text-sm">Erreur de chargement.</p>';
+                list.innerHTML = '<p class="text-red-500 text-sm p-2">Erreur chargement API.</p>';
             }
         }
 
-        function loadScenario(data) {
+        function loadScenarioInput(data) {
             document.getElementById('jsonInput').value = JSON.stringify(data, null, 2);
         }
 
@@ -212,7 +264,7 @@
 
                 if (res.ok) {
                     document.getElementById('newScenarioName').value = '';
-                    loadScenarios();
+                    loadSavedScenarios();
                     alert('✅ Scénario sauvegardé !');
                 } else {
                     alert("Erreur lors de la sauvegarde.");
@@ -220,6 +272,14 @@
             } catch (err) {
                 alert("JSON invalide dans la zone de saisie.");
             }
+        });
+
+        document.getElementById('clearSavedBtn').addEventListener('click', async () => {
+            if (!confirm("⚠️ Êtes-vous sûr de vouloir supprimer TOUS vos scénarios sauvegardés ?")) return;
+
+            // Note: Since we don't have a bulk delete API yet, we might need to implement one or loop delete steps.
+            // Check if we can just implement this later? The UI is there.
+            alert("Fonctionnalité 'Tout supprimer' à implémenter côté backend.");
         });
 
         // Run All Tests Handler - Tests all golden scenarios
@@ -347,21 +407,24 @@
 
         // Update scenario list with test results
         function updateScenarioListWithStatus(results) {
-            const list = document.getElementById('scenarioList');
+            const list = document.getElementById('goldenScenarioList');
             list.innerHTML = results.map(r => {
                 const icon = r.testResult.passed ? '✅' : '❌';
-                const bgColor = r.testResult.passed ? 'hover:bg-green-50 hover:border-green-400' : 'hover:bg-red-50 hover:border-red-400';
+                const bgColor = r.testResult.passed ? 'hover:bg-green-50 hover:border-green-400 bg-white' : 'hover:bg-red-50 hover:border-red-400 bg-red-50';
                 const issuesHtml = r.testResult.issues?.length > 0
-                    ? `<div class="text-xs text-red-600 mt-1">${r.testResult.issues.join('<br>')}</div>`
+                    ? `<div class="text-xs text-red-600 mt-2 p-2 bg-red-100 rounded border border-red-200">${r.testResult.issues.join('<br>')}</div>`
                     : '';
+
                 return `
-                    <div class="p-3 border-2 rounded-lg ${bgColor} cursor-pointer group transition" 
-                         onclick='loadScenario(${JSON.stringify(r.scenario.input)})'>
+                    <div class="p-3 border rounded-lg ${bgColor} cursor-pointer group transition shadow-sm mb-2" 
+                         onclick='loadScenarioInput(${JSON.stringify(r.scenario.input)})'>
                         <div class="flex items-center gap-2">
-                            <span>${icon}</span>
-                            <div class="font-semibold text-sm text-gray-800">${r.scenario.name}</div>
+                            <span class="text-xl">${icon}</span>
+                            <div>
+                                <div class="font-semibold text-sm text-gray-800">${r.scenario.name}</div>
+                                <div class="text-xs text-gray-500">${r.scenario.description || r.scenario.category}</div>
+                            </div>
                         </div>
-                        <div class="text-xs text-gray-500 mt-1">${r.scenario.category}</div>
                         ${issuesHtml}
                     </div>
                 `;
