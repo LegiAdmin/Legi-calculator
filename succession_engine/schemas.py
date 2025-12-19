@@ -223,6 +223,24 @@ class ProfessionalExemption(BaseModel):
 
 
 
+class LifeInsuranceBeneficiary(BaseModel):
+    """
+    Bénéficiaire d'un contrat d'assurance-vie.
+    
+    Permet de gérer les clauses bénéficiaires démembrées:
+    - "Usufruit à mon conjoint, nue-propriété à mes enfants"
+    - La fiscalité est calculée séparément pour chaque type de propriété
+    """
+    beneficiary_id: str  # Lien vers FamilyMember.id
+    share_percent: float = Field(default=100.0, ge=0.0, le=100.0)
+    
+    # Type de propriété reçue (défaut: pleine propriété)
+    ownership_type: OwnershipMode = OwnershipMode.FULL_OWNERSHIP
+    
+    # Date de naissance (pour valorisation usufruit)
+    birth_date: Optional[date] = None
+
+
 class Asset(BaseModel):
     id: str
     estimated_value: float
@@ -251,6 +269,10 @@ class Asset(BaseModel):
     premiums_before_70: Optional[float] = None
     subscriber_type: Optional[SubscriberType] = None
     life_insurance_contract_type: LifeInsuranceContractType = LifeInsuranceContractType.STANDARD
+    
+    # Bénéficiaires AV avec possible démembrement (Clause "usufruit/NP")
+    # Si vide, on assume un seul bénéficiaire en pleine propriété
+    life_insurance_beneficiaries: Optional[List['LifeInsuranceBeneficiary']] = None
     
     # Droit de retour (Art. 738-2 CC)
     # Si le défunt a reçu ce bien d'un parent par donation, le parent peut le récupérer
