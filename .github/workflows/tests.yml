@@ -46,6 +46,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Run migrations
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
+          SECRET_KEY: test-secret-key-for-ci
+        run: |
+          python manage.py migrate --noinput
+
+      - name: Seed legislation data
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
+          SECRET_KEY: test-secret-key-for-ci
+        run: |
+          python manage.py shell < scripts/seed_legislation_2025.py || echo "Seed script failed, using fallback constants"
+
       - name: Run unit tests
         env:
           DJANGO_SETTINGS_MODULE: config.settings

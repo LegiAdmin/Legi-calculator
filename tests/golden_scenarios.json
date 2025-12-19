@@ -206,13 +206,13 @@
                 "exonération"
             ],
             "input": {
-                "matrimonial_regime": "COMMUNAUTE_REDUITE",
+                "matrimonial_regime": "COMMUNITY_LEGAL",
                 "assets": [
                     {
                         "id": "patrimoine",
                         "estimated_value": 1000000,
                         "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "COMMON_PROPERTY"
+                        "asset_origin": "COMMUNITY_PROPERTY"
                     }
                 ],
                 "members": [
@@ -283,7 +283,7 @@
                     "has_spouse_donation": false,
                     "testament_distribution": "LEGAL",
                     "spouse_choice": {
-                        "choice": "USUFRUIT"
+                        "choice": "USUFRUCT"
                     }
                 }
             },
@@ -376,7 +376,7 @@
                 "collatéraux"
             ],
             "input": {
-                "matrimonial_regime": "CELIBATAIRE",
+                "matrimonial_regime": "SEPARATION",
                 "assets": [
                     {
                         "id": "patrimoine",
@@ -422,7 +422,7 @@
                 "collatéraux"
             ],
             "input": {
-                "matrimonial_regime": "CELIBATAIRE",
+                "matrimonial_regime": "SEPARATION",
                 "assets": [
                     {
                         "id": "patrimoine",
@@ -468,7 +468,7 @@
                 "60_pourcent"
             ],
             "input": {
-                "matrimonial_regime": "CELIBATAIRE",
+                "matrimonial_regime": "SEPARATION",
                 "assets": [
                     {
                         "id": "patrimoine",
@@ -577,7 +577,7 @@
                         "relationship": "CHILD",
                         "is_from_current_union": true,
                         "is_disabled": false,
-                        "adoption_type": "SIMPLE",
+                        "adoption_type": "simple",
                         "has_received_continuous_care": false
                     }
                 ],
@@ -625,7 +625,7 @@
                         "relationship": "CHILD",
                         "is_from_current_union": true,
                         "is_disabled": false,
-                        "adoption_type": "SIMPLE",
+                        "adoption_type": "simple",
                         "has_received_continuous_care": true
                     }
                 ],
@@ -803,7 +803,7 @@
                     "has_spouse_donation": false,
                     "testament_distribution": "LEGAL",
                     "spouse_choice": {
-                        "choice": "USUFRUIT"
+                        "choice": "USUFRUCT"
                     }
                 }
             },
@@ -834,13 +834,13 @@
                 "liquidation"
             ],
             "input": {
-                "matrimonial_regime": "COMMUNAUTE_REDUITE",
+                "matrimonial_regime": "COMMUNITY_LEGAL",
                 "assets": [
                     {
                         "id": "maison",
                         "estimated_value": 400000,
                         "ownership_mode": "FULL_OWNERSHIP",
-                        "asset_origin": "COMMON_PROPERTY"
+                        "asset_origin": "COMMUNITY_PROPERTY"
                     }
                 ],
                 "members": [
@@ -914,7 +914,7 @@
                     "has_spouse_donation": false,
                     "testament_distribution": "LEGAL",
                     "spouse_choice": {
-                        "choice": "USUFRUIT"
+                        "choice": "USUFRUCT"
                     }
                 }
             },
@@ -1058,7 +1058,7 @@
                         "ownership_mode": "FULL_OWNERSHIP",
                         "asset_origin": "PERSONAL_PROPERTY",
                         "professional_exemption": {
-                            "exemption_type": "ART_787_B"
+                            "exemption_type": "DUTREIL"
                         }
                     }
                 ],
@@ -1129,6 +1129,7 @@
                     "testament_distribution": "CUSTOM",
                     "specific_bequests": [
                         {
+                            "asset_id": "patrimoine",
                             "beneficiary_id": "ami",
                             "amount": 50000,
                             "bequest_type": "SPECIFIC"
