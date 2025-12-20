@@ -21,7 +21,7 @@ from succession_engine.schemas import (
 from datetime import date
 from succession_engine.rules.fiscal import FiscalCalculator
 from succession_engine.core.liquidation import MatrimonialLiquidator
-from succession_engine.core.estate import get_reportable_donations, reconstitute_estate
+from succession_engine.core.estate import get_reportable_donations, reconstitute_estate, get_donations_for_reunion_fictive
 from succession_engine.core.devolution import (
     calculate_legal_reserve, process_specific_bequests,
     HeirShareCalculator, check_excessive_liberalities,
@@ -121,9 +121,22 @@ class SuccessionCalculator:
 
         # STEP 3: Détermination de la dévolution (Réserve & Quotité)
         heirs = input_data.members
+        
+        # Phase 16: Calculation Mass regarding Art 922 CC (Reunion Fictive)
+        # We need ALL donations (including Donation-Partage) to calculate the Reserve.
+        # net_succession_assets currently holds: Liquidation + Reportable Donations - Debts.
+        # We need: Liquidation + Reunion Fictive (All Donations) - Debts.
+        reunion_donations, reunion_value = get_donations_for_reunion_fictive(input_data.donations)
+        
+        # mass_art_922 = net_succession_assets - reportable_donations_value + reunion_value
+        mass_art_922 = net_succession_assets - reportable_donations_value + reunion_value
+        
+        if tracer:
+            tracer.add_decision("INFO", "Masse Art. 922 CC", f"Masse de calcul de la réserve : {mass_art_922:,.2f}€ (incluant Donations-Partages)")
+
         reserve_fraction, reserve_description = calculate_legal_reserve(heirs)
-        legal_reserve = net_succession_assets * reserve_fraction
-        disposable_quota = net_succession_assets - legal_reserve
+        legal_reserve = mass_art_922 * reserve_fraction
+        disposable_quota = mass_art_922 - legal_reserve
         
         # Handle specific bequests
         specific_bequests_info, bequests_total_value, bequest_warnings = process_specific_bequests(
@@ -138,8 +151,9 @@ class SuccessionCalculator:
         heir_shares = share_calculator.calculate(heirs, input_data.wishes, net_succession_assets, tracer=tracer)
         
         # Check for excessive liberalities (Art. 920+ CC - Réduction)
+        # We compare ALL donations (reunion_value) + Bequests vs QD
         excessive_lib_warnings = check_excessive_liberalities(
-            reportable_donations_value, bequests_total_value,
+            reunion_value, bequests_total_value,
             disposable_quota, legal_reserve, reserve_fraction
         )
         for elw in excessive_lib_warnings:

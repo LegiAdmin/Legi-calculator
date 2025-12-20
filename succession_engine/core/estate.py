@@ -49,6 +49,53 @@ def get_reportable_donations(donations: List) -> Tuple[List[Dict], float]:
     return reportable_donations, reportable_donations_value
 
 
+def get_donations_for_reunion_fictive(donations: List) -> Tuple[List[Dict], float]:
+    """
+    Get all donations for Reunion Fictive (Art. 922 CC).
+    
+    This includes:
+    - Donations Reportables (Civil)
+    - Donations-Partages (Non Reportables but count for Reserve)
+    - Donations Hors Part (Préciputaires)
+    
+    Excludes:
+    - Présent d'usage
+    
+    Returns:
+        Tuple of (list of donation info dicts, total value for reunion fictive)
+    """
+    reunion_donations = []
+    reunion_value = 0.0
+    
+    if donations:
+        from succession_engine.schemas import DonationType
+        for donation in donations:
+            # PRESENT_USAGE is excluded from everything (Art 852 CC)
+            if donation.donation_type == DonationType.PRESENT_USAGE:
+                continue
+            
+            # For Donation-Partage, Art 922 uses value at donation date (Art 1078 CC)
+            # whereas get_reportable_value returns 0.0 (because it's not reportable).
+            if donation.donation_type == DonationType.DONATION_PARTAGE:
+                val = donation.original_value
+            else:
+                val = donation.get_reportable_value()
+                
+            reunion_value += val
+            reunion_donations.append({
+                'beneficiary_id': donation.beneficiary_heir_id,
+                'beneficiary_name': donation.beneficiary_name,
+                'donation_date': donation.donation_date,
+                'value': val,
+                'type': donation.donation_type.value,
+                'is_declared_to_tax': donation.is_declared_to_tax,
+                # Tag to distinguish origin
+                'is_reportable': donation.is_reportable()
+            })
+            
+    return reunion_donations, reunion_value
+
+
 def reconstitute_estate(
     net_assets: float,
     reportable_donations_value: float = 0.0,
