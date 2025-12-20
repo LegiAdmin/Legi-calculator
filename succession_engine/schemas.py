@@ -555,68 +555,7 @@ class SimulationInput(BaseModel):
     # Field to store validation warnings (non-blocking)
     heir_warnings: List[str] = Field(default_factory=list)
     
-    @model_validator(mode='after')
-    def validate_heir_consistency(self):
-        """
-        Validate heir consistency and apply French succession order rules (Art. 731-755 CC).
-        
-        French succession order:
-        1. Descendants (children, grandchildren, great-grandchildren) - exclude all others except spouse
-        2. Spouse with parents - Art. 757-1 CC
-        3. Spouse with siblings - Art. 757-2 CC  
-        4. Parents alone - if no descendants and no spouse
-        5. Siblings - if no descendants, no spouse, no parents
-        6. Other relatives (nephews, etc.)
-        
-        This validator adds warnings but doesn't block - the calculator handles the actual exclusion.
-        """
-        warnings = []
-        
-        # Categorize heirs
-        spouse = next((m for m in self.members if m.relationship in [HeirRelation.SPOUSE, HeirRelation.PARTNER]), None)
-        children = [m for m in self.members if m.relationship == HeirRelation.CHILD]
-        grandchildren = [m for m in self.members if m.relationship == HeirRelation.GRANDCHILD]
-        great_grandchildren = [m for m in self.members if m.relationship == HeirRelation.GREAT_GRANDCHILD]
-        parents = [m for m in self.members if m.relationship == HeirRelation.PARENT]
-        siblings = [m for m in self.members if m.relationship == HeirRelation.SIBLING]
-        nephews = [m for m in self.members if m.relationship == HeirRelation.NEPHEW_NIECE]
-        
-        descendants = children + grandchildren + great_grandchildren
-        
-        # Rule 1: Descendants exclude parents from inheritance (but keep for info)
-        if descendants and parents:
-            warnings.append(
-                f"⚠️ Les {len(parents)} parent(s) déclaré(s) n'hériteront pas car il y a {len(descendants)} descendant(s) (Art. 734 CC)"
-            )
-        
-        # Rule 2: Descendants exclude siblings
-        if descendants and siblings:
-            warnings.append(
-                f"⚠️ Les {len(siblings)} frère(s)/sœur(s) n'hériteront pas car il y a des descendants (Art. 734 CC)"
-            )
-        
-        # Rule 3: Descendants exclude nephews
-        if descendants and nephews:
-            warnings.append(
-                f"⚠️ Les {len(nephews)} neveu(x)/nièce(s) n'hériteront pas car il y a des descendants"
-            )
-        
-        # Rule 4: Spouse + parents = siblings excluded
-        if spouse and parents and siblings and not descendants:
-            warnings.append(
-                f"⚠️ Les {len(siblings)} frère(s)/sœur(s) n'hériteront pas (conjoint + parents présents, Art. 757-1 CC)"
-            )
-        
-        # Rule 5: Parents exclude siblings (if no spouse)
-        if parents and siblings and not spouse and not descendants:
-            warnings.append(
-                f"⚠️ Application fente successorale probable (parents + frères/sœurs, Art. 746-749 CC)"
-            )
-        
-        # Store warnings for output
-        self.heir_warnings = warnings
-        
-        return self
+    # validate_heir_consistency removed to reduce alert noise (handled by calculator)
 
 
 class GlobalMetrics(BaseModel):

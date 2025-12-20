@@ -387,7 +387,7 @@ class SuccessionCalculator:
             
             # Trace
             if tracer:
-                 details = f"Civil: {total_civil_value:,.0f}€"
+                 details = f"Part Nette Civile: {total_civil_value:,.0f}€"
                  if addback_757b > 0:
                      details += f" + AV 757B: {addback_757b:,.0f}€"
                  if heir_exemption_share > 0:
