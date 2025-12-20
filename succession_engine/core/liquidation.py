@@ -40,16 +40,24 @@ class MatrimonialLiquidator:
         self.preciput_value = 0.0
         self.unequal_share_spouse_pct = None
     
-    def liquidate(self, input_data: 'SimulationInput') -> float:
+    
+    def liquidate(self, input_data: 'SimulationInput', tracer: 'BusinessLogicTracer' = None) -> float:
         """
-        Execute the matrimonial regime liquidation.
-        
-        Args:
-            input_data: Complete simulation input
-            
-        Returns:
-            Net assets belonging to the deceased's estate (excluding life insurance)
+        Execute the matrimonial regime liquidation with optional tracing.
         """
+        if tracer:
+            tracer.start_step(
+                step_number=1,
+                step_name="Liquidation du régime matrimonial",
+                description="Séparation des biens entre le défunt et le conjoint survivant."
+            )
+            tracer.explain(
+                what=f"Application des règles du régime '{input_data.matrimonial_regime.value}'.",
+                why="Le régime matrimonial définit la propriété des biens (Art. 1400+ CC). Seule la part du défunt entre dans la succession."
+            )
+            tracer.add_input("Régime Matrimonial", input_data.matrimonial_regime.value)
+            tracer.add_input("Date Mariage", str(input_data.marriage_date) if input_data.marriage_date else "Non renseignée")
+
         deceased_assets = 0.0
         spouse_assets = 0.0
         community_assets = 0.0
@@ -64,11 +72,16 @@ class MatrimonialLiquidator:
         for asset in input_data.assets:
             # Check if this is a life insurance contract
             if LifeInsuranceCalculator.is_life_insurance(asset):
-                # Life insurance is OUTSIDE succession
                 life_insurance_assets.append(asset)
                 liquidation_details.append(
                     f"  • {asset.id}: {asset.estimated_value:,.0f}€ (assurance-vie, hors succession)"
                 )
+                if tracer:
+                    tracer.add_decision(
+                        "EXCLUDED", 
+                        f"Assurance-vie ({asset.id})", 
+                        "Hors succession (Art. L132-12 C. Assurances)"
+                    )
                 continue
             
             try:
@@ -77,138 +90,95 @@ class MatrimonialLiquidator:
                     input_data.marriage_date
                 )
                 
-                # Calculate actual value based on indivision and CCA
-                from succession_engine.schemas import OwnershipMode
-                
                 # Phase 10: Include Compte Courant d'Associé (CCA)
                 cca_amt = getattr(asset, 'cca_value', 0.0)
                 base_value = asset.estimated_value + cca_amt
                 
                 actual_value = base_value
-                deceased_percentage = 100.0  # Default: 100% owned by deceased
+                deceased_percentage = 100.0  # Default: 100% owned by deceased (if personal) or 100% of community
                 
+                # Handle Indivision
+                from succession_engine.schemas import OwnershipMode
                 if asset.ownership_mode == OwnershipMode.INDIVISION and asset.indivision_details:
-                    # Asset in indivision: only count deceased's share
                     deceased_percentage = asset.indivision_details.get_deceased_share_percentage()
                     actual_value = base_value * (deceased_percentage / 100.0)
-                    
-                    indiv_info = []
-                    if asset.indivision_details.withSpouse and asset.indivision_details.spouseShare:
-                        indiv_info.append(f"conjoint {asset.indivision_details.spouseShare}%")
-                    if asset.indivision_details.withOthers and asset.indivision_details.othersShare:
-                        indiv_info.append(f"autres {asset.indivision_details.othersShare}%")
-                    
-                    details_str = f"  • {asset.id}: {base_value:,.0f}€ total "
-                    if cca_amt > 0:
-                        details_str += f"(dont CCA: {cca_amt:,.0f}€) "
-                    details_str += f"(défunt {deceased_percentage:.1f}% = {actual_value:,.0f}€, {', '.join(indiv_info)})"
-                    
-                    liquidation_details.append(details_str)
-                else:
-                    # Specific logging for single owner with CCA
-                    if cca_amt > 0:
-                         liquidation_details.append(
-                            f"  ℹ️ {asset.id} inclut un Compte Courant d'Associé de {cca_amt:,.0f}€ (ajouté à la valeur)"
-                        )
+                    liquidation_details.append(f"  • {asset.id}: Part indivise {deceased_percentage}% ({actual_value:,.0f}€)")
                 
                 # Apply main residence 20% allowance (Art. 764 bis CGI)
                 main_residence_allowance = 0.0
                 if asset.is_main_residence and asset.spouse_occupies_property:
-                    # Allowance likely does NOT apply to CCA, only to real property value?
-                    # Art 764 bis: "valeur vénale de l'immeuble". CCA is a claim.
-                    # Technically we should only apply 20% to the estimated_value part.
-                    # Correction: Apply allowance only to the Real Estate part (estimated_value)
-                    
-                    # Calculate share of real estate in actual_value
-                    # If indivision, real_estate_share = estimated_value * pct
                     real_estate_share = asset.estimated_value * (deceased_percentage / 100.0)
-                    
                     main_residence_allowance = real_estate_share * 0.20
                     actual_value = actual_value - main_residence_allowance
-                    
                     liquidation_details.append(
-                        f"  🏠 Résidence principale {asset.id}: abattement 20% sur la valeur immobilière = -{main_residence_allowance:,.0f}€ "
-                        f"(valeur retenue: {actual_value:,.0f}€)"
+                        f"  🏠 Résidence principale {asset.id}: abattement 20% (-{main_residence_allowance:,.0f}€)"
                     )
-
-                
-                if owner == "DECEASED":
-                    # Bien propre du défunt
-                    deceased_assets += actual_value
-                    if not (asset.ownership_mode == OwnershipMode.INDIVISION and asset.indivision_details):
-                        liquidation_details.append(
-                            f"  • {asset.id}: {actual_value:,.0f}€ (bien propre défunt)"
+                    if tracer:
+                         tracer.add_decision(
+                            "INFO",
+                            f"Abattement 20% Résidence Principale ({asset.id})",
+                            "Art. 764 bis CGI (Conjoint survivant occupant)"
                         )
+
+                if owner == "DECEASED":
+                    deceased_assets += actual_value
+                    liquidation_details.append(f"  • {asset.id}: Bien propre du défunt ({actual_value:,.0f}€)")
+                    if tracer:
+                        tracer.add_decision("INCLUDED", f"{asset.id} (Propre)", f"Valeur: {actual_value:,.2f}€")
                     
                 elif owner == "SPOUSE":
-                    # Bien propre du conjoint → 0% dans la succession
                     spouse_assets += actual_value
-                    liquidation_details.append(
-                        f"  • {asset.id}: {actual_value:,.0f}€ (bien propre conjoint, exclu)"
-                    )
+                    liquidation_details.append(f"  • {asset.id}: Bien propre du conjoint (Exclu)")
+                    if tracer:
+                        tracer.add_decision("EXCLUDED", f"{asset.id} (Conjoint)", "Bien propre du conjoint")
                     
                 elif owner == "COMMUNITY":
-                    # Bien commun → 50% dans la succession, 50% au conjoint
                     half_value = actual_value / 2
                     community_assets += actual_value
                     
-                    # Calculate REWARDS (Récompenses) if funded by personal funds
+                    # Calculate REWARDS (Récompenses)
                     if asset.community_funding_percentage > 0 and asset.community_funding_percentage < 100:
                         personal_funding_percent = 100 - asset.community_funding_percentage
                         reward_amount = actual_value * (personal_funding_percent / 100)
                         
-                        # Split rewards equally as we don't have that info
                         rewards_owed_to_deceased += reward_amount / 2
                         rewards_owed_to_spouse += reward_amount / 2
                         
-                        deceased_assets += half_value  # Base community share
-                        
-                        liquidation_details.append(
-                            f"  • {asset.id}: {actual_value:,.0f}€ (bien commun) → "
-                            f"{half_value:,.0f}€ chacun + récompense {reward_amount:,.0f}€ "
-                            f"(financé à {personal_funding_percent:.0f}% par fonds propres)"
-                        )
-                    else:
-                        # Pure community property, no rewards
                         deceased_assets += half_value
                         liquidation_details.append(
-                            f"  • {asset.id}: {actual_value:,.0f}€ (bien commun) → {half_value:,.0f}€ dans succession"
+                            f"  • {asset.id}: Bien commun ({half_value:,.0f}€ part sucession) + Récompense"
                         )
+                        if tracer:
+                             tracer.add_decision(
+                                 "INCLUDED", 
+                                 f"{asset.id} (Commun)", 
+                                 f"50% Valeur: {half_value:,.2f}€ + Récompense due: {reward_amount/2:,.2f}€"
+                            )
+                    else:
+                        deceased_assets += half_value
+                        liquidation_details.append(f"  • {asset.id}: Bien commun (50% = {half_value:,.0f}€)")
+                        if tracer:
+                            tracer.add_decision("INCLUDED", f"{asset.id} (Commun)", f"50% Valeur: {half_value:,.2f}€")
                     
             except ValueError as e:
-                # Asset configuration error
-                liquidation_details.append(
-                    f"  ⚠️ {asset.id}: Erreur de configuration - {str(e)}"
-                )
-                # For safety, include full value in succession
+                liquidation_details.append(f"  ⚠️ {asset.id}: Erreur - {str(e)}")
                 deceased_assets += asset.estimated_value
         
-        # Apply rewards: Community owes to each spouse
+        # Apply rewards
         deceased_assets += rewards_owed_to_deceased
-        
-        # Spouse gets: base share + reward owed to them (not in succession)
         spouse_community_share = (community_assets / 2) + rewards_owed_to_spouse
         
-        # Add rewards details if any
-        if rewards_owed_to_deceased > 0 or rewards_owed_to_spouse > 0:
-            liquidation_details.append(
-                f"\n  💰 Récompenses matrimoniales :"
-            )
-            if rewards_owed_to_deceased > 0:
-                liquidation_details.append(
-                    f"    → Défunt : +{rewards_owed_to_deceased:,.0f}€"
-                )
-            if rewards_owed_to_spouse > 0:
-                liquidation_details.append(
-                    f"    → Conjoint : +{rewards_owed_to_spouse:,.0f}€ (exclu succession)"
-                )
-        
+        if (rewards_owed_to_deceased > 0 or rewards_owed_to_spouse > 0) and tracer:
+            tracer.add_output("Récompenses dues au défunt", rewards_owed_to_deceased)
+            tracer.add_output("Récompenses dues au conjoint", rewards_owed_to_spouse)
+
         # Apply matrimonial advantages
         deceased_assets = self._apply_matrimonial_advantages(
-            input_data, deceased_assets, community_assets, liquidation_details
+            input_data, deceased_assets, community_assets, liquidation_details, 
+            members=input_data.members, tracer=tracer
         )
         
-        # Store details for later display
+        # Store details
         self.liquidation_details = liquidation_details
         self.community_total = community_assets
         self.spouse_share = spouse_community_share
@@ -216,6 +186,12 @@ class MatrimonialLiquidator:
         self.rewards_deceased = rewards_owed_to_deceased
         self.rewards_spouse = rewards_owed_to_spouse
         
+        if tracer:
+            tracer.add_output("Part Communauté Défunt", community_assets / 2)
+            tracer.add_output("Biens Propres Défunt", deceased_assets - (community_assets/2) if community_assets > 0 else deceased_assets)
+            tracer.add_output("Actif Brut Successoral", deceased_assets)
+            tracer.end_step(f"Actif brut: {deceased_assets:,.2f}€")
+
         return deceased_assets
     
     def _apply_matrimonial_advantages(
@@ -223,7 +199,9 @@ class MatrimonialLiquidator:
         input_data: 'SimulationInput',
         deceased_assets: float,
         community_assets: float,
-        liquidation_details: List[str]
+        liquidation_details: List[str],
+        members: List = None,
+        tracer: 'BusinessLogicTracer' = None
     ) -> float:
         """
         Apply matrimonial advantages (Art. 1527 Code civil).
@@ -242,18 +220,72 @@ class MatrimonialLiquidator:
         
         # 1. Clause d'attribution intégrale (Art. 1524 CC)
         if matrimonial_advantages.has_full_attribution:
-            old_deceased = deceased_assets
-            deceased_assets = deceased_assets - (community_assets / 2)
+            # Calculate the advantage (amount spouses takes explicitly beyond 50%)
+            # Standard: 50%. Full: 100%. Advantage = 50% of community.
+            advantage_value = community_assets / 2
+            
+            # Art. 1527 CC: Action en Retranchement
+            # If stepchildren exist, advantage is limited to Disposable Quota
+            excess_advantage = 0.0
+            
+            if members:
+                from succession_engine.schemas import HeirRelation
+                stepchildren = [m for m in members if m.relationship == HeirRelation.CHILD and not getattr(m, 'is_from_current_union', True)]
+                all_children = [m for m in members if m.relationship == HeirRelation.CHILD]
+                
+                if stepchildren:
+                    # Calculate QD (Quotité Disponible)
+                    num_children = len(all_children)
+                    reserve_rate = 0.5 if num_children == 1 else (2/3 if num_children == 2 else 0.75)
+                    qd_rate = 1.0 - reserve_rate
+                    
+                    # Fictitious Reunion for Calculation (Biens Propres + 1/2 Community)
+                    # Note: deceased_assets at this point includes Personal + Rewards + 1/2 Community (before full attrib removal)
+                    # Wait, deceased_assets passed effectively holds the "standard share"
+                    theoretical_mass = deceased_assets 
+                    
+                    available_quota = theoretical_mass * qd_rate
+                    
+                    if advantage_value > available_quota:
+                        excess_advantage = advantage_value - available_quota
+                        
+                        if tracer:
+                             tracer.add_decision(
+                                "WARNING",
+                                "Action en Retranchement (Art. 1527 CC)", 
+                                f"Enfants d'un autre lit détectés. Avantage ({advantage_value:,.0f}€) réduit à la QD ({available_quota:,.0f}€). Excès réintégré: {excess_advantage:,.0f}€"
+                             )
+                        liquidation_details.append(
+                            f"  ⚠️ ACTION EN RETRANCHEMENT (Art 1527 CC): Avantage réduit de {excess_advantage:,.0f}€"
+                        )
+
+            deceased_assets = deceased_assets - (community_assets / 2) + excess_advantage
+            
             liquidation_details.append(
                 f"\n  📜 CLAUSE D'ATTRIBUTION INTÉGRALE (Art. 1524 CC)"
             )
-            liquidation_details.append(
-                f"    → Conjoint reçoit 100% des biens communs: {community_assets:,.0f}€"
-            )
-            liquidation_details.append(
-                f"    → Succession réduite de {old_deceased:,.0f}€ à {deceased_assets:,.0f}€"
-            )
+            if excess_advantage > 0:
+                 liquidation_details.append(
+                    f"    → Conjoint reçoit: {community_assets - excess_advantage:,.0f}€ (100% com. - réduction)"
+                )
+                 liquidation_details.append(
+                    f"    → Succession (Réserve Enfants): {excess_advantage:,.0f}€"
+                )
+            else:
+                liquidation_details.append(
+                    f"    → Conjoint reçoit 100% des biens communs: {community_assets:,.0f}€"
+                )
+                liquidation_details.append(
+                    f"    → Succession réduite de {deceased_assets + (community_assets/2) - excess_advantage:,.0f}€ à {deceased_assets:,.0f}€"
+                )
+
             self.has_full_attribution = True
+            if tracer:
+                tracer.add_decision(
+                    "INFO",
+                    "Clause d'attribution intégrale",
+                    "Le conjoint récupère toute la communauté (Art. 1524 CC), réduisant la succession aux seuls biens propres."
+                )
         else:
             self.has_full_attribution = False
         
@@ -268,39 +300,18 @@ class MatrimonialLiquidator:
                     # Match by Property (Robust) or by Name (Fallback)
                     is_match = False
                     
-                    # 1. Check Main Residence property
-                    # Note: We need to import PreciputType or compare by string value if import is tricky here
-                    # Since preciput_type is an Enum member (from Pydantic model), we can compare keys or values
                     if preciput_type.value == "RESIDENCE_PRINCIPALE" and asset.is_main_residence:
                         is_match = True
-                    
-                    # 2. Check Name string match
                     elif preciput_type.value.lower() in asset_id_lower:
                         is_match = True
                     
                     if is_match:
-                        
                         asset_val = asset.estimated_value
                         preciput_value += asset_val
                         preciput_details.append(f"{asset.id}: {asset_val:,.0f}€")
                         
-                        # Remove asset from Deceased Assets
-                        # Logic:
-                        # - If Community Asset: Deceased currently holds 50% in 'deceased_assets'.
-                        #   Preciput removes it entirely to give to spouse.
-                        #   So we subtract 50% of its value (the part included in deceased_assets).
-                        # - If Deceased Own Property (unlikely for Preciput but possible):
-                        #   We subtract 100% of its value.
-                        
-                        # Calculate value to subtract (must match value added to estate)
                         value_to_subtract = asset_val
-                        
-                        # If 20% abatement was applied, subtract the abated value
-                        # Note: We must replicate the condition from the main loop
                         if asset.is_main_residence and asset.spouse_occupies_property:
-                            # Abatement applies to the real estate part
-                            # Logic: estimated_value * (share / 100) * 0.20 was deducted
-                            # So actual_value = estimated_value - (estimated_value * 0.20) = estimated_value * 0.8
                             value_to_subtract = asset_val * 0.8
                         
                         if asset.asset_origin.value == "COMMUNITY_PROPERTY":
@@ -308,6 +319,12 @@ class MatrimonialLiquidator:
                         elif asset.asset_origin.value == "PERSONAL_PROPERTY" and asset.determine_owner(input_data.matrimonial_regime, input_data.marriage_date) == "DECEASED":
                              deceased_assets = max(0, deceased_assets - value_to_subtract)
                         
+                        if tracer:
+                            tracer.add_decision(
+                                "INFO",
+                                f"Préciput sur {asset.id}",
+                                f"Prélevé hors part par le conjoint (Art. 1515 CC). Valeur: {asset_val:,.0f}€"
+                            )
                         break
             
             if preciput_value > 0:
@@ -342,6 +359,13 @@ class MatrimonialLiquidator:
             )
             
             self.unequal_share_spouse_pct = spouse_pct
+            
+            if tracer:
+                tracer.add_decision(
+                    "INFO",
+                    f"Partage Inégal ({matrimonial_advantages.spouse_share_percentage}% Conjoint)",
+                    f"Modification du partage 50/50 de la communauté."
+                )
         else:
             self.unequal_share_spouse_pct = None
         

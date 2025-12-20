@@ -177,19 +177,20 @@ class HeirShareCalculator:
             "excluded_rule_ids": self.excluded_rule_ids.copy()
         }
     
-    def calculate(self, heirs: List, wishes, net_succession_assets: float) -> Dict[str, float]:
+    
+    def calculate(self, heirs: List, wishes, net_succession_assets: float, tracer: 'BusinessLogicTracer' = None) -> Dict[str, float]:
         """
-        Calculate share percentage for each heir.
-        
-        Args:
-            heirs: List of FamilyMember objects
-            wishes: Wishes object with distribution preferences
-            net_succession_assets: Total estate value
-            
-        Returns:
-            Dict mapping heir_id -> share_percentage (0.0 to 1.0)
+        Calculate share percentage for each heir with optional tracing.
         """
         heir_shares = {}
+        
+        if tracer:
+            tracer.start_step(
+                step_number=3,
+                step_name="Détermination de la dévolution",
+                description="Calcul des parts héritées selon la loi et les volontés (testament)."
+            )
+            tracer.add_input("Actif Net Succession", net_succession_assets)
         
         # Phase 1: Filter out renounced heirs (Art. 805+ CC)
         renounced_heirs = [h for h in heirs if getattr(h, 'has_renounced', False)]
@@ -201,9 +202,16 @@ class HeirShareCalculator:
             self.add_applied_rule("RULE_RENUNCIATION")
             for renounced in renounced_heirs:
                 renounced_shares[renounced.id] = 0.0  # Explicit 0% for renounced
+                if tracer:
+                    tracer.add_decision(
+                        "EXCLUDED", 
+                        f"{renounced.id} (Renonçant)", 
+                        "A renoncé à la succession (Art. 805 CC)."
+                    )
         
         # If all heirs renounced, return only renounced shares (edge case)
         if not active_heirs:
+            if tracer: tracer.end_step("Tous les héritiers ont renoncé.")
             return renounced_shares
         
         # Use active_heirs for calculation from here
@@ -221,17 +229,34 @@ class HeirShareCalculator:
         
         # Process based on wishes
         if spouse and wishes and wishes.spouse_choice:
+            if tracer: 
+                tracer.explain(
+                    what="Application Option Conjoint", 
+                    why=f"Le conjoint a choisi l'option: {wishes.spouse_choice.choice}"
+                )
             heir_shares = self._apply_spouse_choice(
                 heirs, wishes, spouse, net_succession_assets, representation_map
             )
         elif wishes and hasattr(wishes, 'custom_shares') and wishes.custom_shares:
+            if tracer: tracer.explain(what="Application Testament", why="Répartition personnalisée selon testament.")
             heir_shares = self._apply_custom_shares(wishes)
         else:
+            if tracer: 
+                tracer.explain(
+                    what="Dévolution Légale par défaut", 
+                    why="Application des règles du Code Civil (Ordre et Degrés) en l'absence de testament ou d'option spécifique."
+                )
             heir_shares = self._apply_default_distribution(heirs, representation_map)
         
         # Merge renounced shares (0%) with calculated shares
         heir_shares.update(renounced_shares)
         
+        if tracer:
+            for hid, share in heir_shares.items():
+                if share > 0:
+                    tracer.add_output(f"Part {hid}", f"{share*100:.2f}%")
+            tracer.end_step("Calcul des parts terminé.")
+            
         return heir_shares
     
     def _build_representation_map(self, heirs: List) -> Dict[str, List]:
@@ -389,7 +414,7 @@ class HeirShareCalculator:
         return heir_shares
     
     def _apply_default_distribution(
-        self, heirs: List, representation_map: Dict[str, List]
+        self, heirs: List, representation_map: Dict[str, List], tracer=None
     ) -> Dict[str, float]:
         """
         Apply default legal distribution.
@@ -537,42 +562,15 @@ class HeirShareCalculator:
         # When no spouse and no descendants, check if we should apply fente
         # The estate is split 50/50 between paternal and maternal lines
         if not spouse and not children and not grandchildren and not great_grandchildren:
-            # Filter renouncing heirs from other lines
-            paternal_heirs = [
-                h for h in other_heirs 
-                if getattr(h, 'paternal_line', None) is True
-                and getattr(h, 'acceptance_option', 'PURE_SIMPLE') != 'RENUNCIATION'
-            ]
-            maternal_heirs = [
-                h for h in other_heirs 
-                if getattr(h, 'paternal_line', None) is False
-                and getattr(h, 'acceptance_option', 'PURE_SIMPLE') != 'RENUNCIATION'
-            ]
-            
-            # Only apply fente if we have heirs in both lines
-            if paternal_heirs and maternal_heirs:
-                # 50% to each line
-                paternal_share = 0.5 / len(paternal_heirs)
-                maternal_share = 0.5 / len(maternal_heirs)
-                
-                for heir in paternal_heirs:
-                    heir_shares[heir.id] = paternal_share
-                for heir in maternal_heirs:
-                    heir_shares[heir.id] = maternal_share
-                
-                return heir_shares
-            
-            # If only one line has heirs, they get 100%
-            elif paternal_heirs:
-                share = 1.0 / len(paternal_heirs)
-                for heir in paternal_heirs:
-                    heir_shares[heir.id] = share
-                return heir_shares
-            elif maternal_heirs:
-                share = 1.0 / len(maternal_heirs)
-                for heir in maternal_heirs:
-                    heir_shares[heir.id] = share
-                return heir_shares
+             # Phase 11 Refactor: Delegated to FenteDevolution rule
+             from succession_engine.rules.fente import FenteDevolution
+             # Ensure we pass the current state of shares (likely empty or partial)
+             heir_shares = FenteDevolution.apply_fente(other_heirs, heir_shares, tracer=tracer)
+             
+             # If shares were assigned, return them
+             if heir_shares:
+                 return heir_shares
+
             # Otherwise, fall through to default distribution
         
         # Build souches

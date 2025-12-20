@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Union, Dict
 from datetime import date
 from pydantic import BaseModel, Field, model_validator, field_validator
 
@@ -37,6 +37,9 @@ class HeirRelation(str, Enum):
     GRANDCHILD = "GRANDCHILD"
     GREAT_GRANDCHILD = "GREAT_GRANDCHILD"  # Arrière-petits-enfants
     NEPHEW_NIECE = "NEPHEW_NIECE"  # Neveux et nièces
+    AUNT_UNCLE = "AUNT_UNCLE"
+    COUSIN = "COUSIN"
+    GREAT_UNCLE_AUNT = "GREAT_UNCLE_AUNT"
     OTHER = "OTHER"
 
 class SubscriberType(str, Enum):
@@ -653,12 +656,31 @@ class TaxCalculationDetail(BaseModel):
     brackets_applied: List[TaxBracketDetail]
     total_tax: float
 
+class DecisionType(str, Enum):
+    INCLUDED = "INCLUDED"
+    EXCLUDED = "EXCLUDED"
+    INFO = "INFO"
+    WARNING = "WARNING"
+
+class CalculationDecision(BaseModel):
+    """A specific decision made during a step"""
+    type: DecisionType
+    description: str
+    reason: Optional[str] = None
+
 class CalculationStep(BaseModel):
-    """A step in the calculation process"""
+    """A step in the calculation process with detailed explicability"""
     step_number: int
     step_name: str
     description: str
     result_summary: str
+    
+    # Explicability fields (Backend -> Frontend)
+    what: Optional[str] = None  # Qu'est-ce qu'on fait ? (Business logic)
+    why: Optional[str] = None   # Pourquoi ? (Legal source / Reason)
+    inputs: Dict[str, str] = Field(default_factory=dict)   # Input data used
+    outputs: Dict[str, str] = Field(default_factory=dict)  # Output values produced
+    decisions: List[CalculationDecision] = Field(default_factory=list) # Key decisions made
 
 class AssetBreakdown(BaseModel):
     """Detailed information about an asset"""

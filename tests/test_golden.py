@@ -248,7 +248,7 @@ class TestGoldenScenariosIntegrity:
     
     def test_scenarios_have_category(self):
         """Ensure all scenarios are categorized."""
-        valid_categories = ["BASE", "COMPLEX", "ADVANCED"]
+        valid_categories = ["BASE", "COMPLEX", "ADVANCED", "CHAOS"]
         for scenario in GOLDEN_SCENARIOS:
             cat = scenario.get("category", "")
             assert cat in valid_categories, \

@@ -69,7 +69,8 @@ class FiscalCalculator:
         is_disabled: bool = False,
         prior_allowance_used: float = 0.0,
         is_adopted_simple: bool = False,
-        has_continuous_care: bool = False
+        has_continuous_care: bool = False,
+        tracer: 'BusinessLogicTracer' = None
     ):
         """
         Calculates the inheritance tax based on the taxable amount and the relationship.
@@ -81,68 +82,92 @@ class FiscalCalculator:
             is_disabled: If True, applies additional 159 325€ allowance (Art. 779 II CGI)
             prior_allowance_used: Allowance already used by donations within 15 years (Art. 784 CGI)
                                   This amount is deducted from the available allowance.
+            tracer: Optional tracer for explicability
         
         Returns:
             tuple: (tax_amount: float, details: TaxCalculationDetail)
         """
+        if tracer:
+            tracer.start_step(
+                step_number=5, # Typically step 5 in overall flow, or sub-step
+                step_name=f"Calcul Droits - {relationship}",
+                description="Calcul des droits de succession après abattement."
+            )
+            tracer.add_input("Montant Taxable Brut", taxable_amount)
+
         # Fetch active legislation
         try:
             legislation = Legislation.objects.get(is_active=True)
         except Legislation.DoesNotExist:
-            # Return empty details if no legislation
             print(f"[DEBUG FISCAL] No active legislation found!")
+            if tracer: tracer.add_decision("ERROR", "Pas de législation active trouvée.")
             return 0.0, None
 
         # Handle adoption simple (Art. 786 CGI)
-        # - Without continuous care: taxed as "OTHER" (60% flat rate)
-        # - With continuous care 5+ years during minority: taxed as CHILD
         effective_relationship = relationship
         if is_adopted_simple and relationship == HeirRelation.CHILD:
-            if not has_continuous_care:
-                effective_relationship = HeirRelation.OTHER  # 60% rate
+            if has_continuous_care:
+                if tracer:
+                    tracer.add_decision(
+                        "INCLUDED", 
+                        "Adoption Simple : Assimilation Enfant", 
+                        "Preuve de soins continus apportée (Art. 786 CGI)."
+                    )
+            else:
+                effective_relationship = HeirRelation.OTHER
+                if tracer:
+                    tracer.add_decision(
+                        "EXCLUDED", 
+                        "Adoption Simple : Taxation Tiers (60%)", 
+                        "Absence de soins continus durant minorité (Art. 786 CGI)."
+                    )
 
         # 1. Apply Allowances
-        # Use string keys for robust matching (handles both enum and string values)
         relation_map = {
             'CHILD': 'CHILD',
-            'GRANDCHILD': 'CHILD',  # Same allowance as children
-            'GREAT_GRANDCHILD': 'CHILD',  # Same allowance as children
+            'GRANDCHILD': 'CHILD',
+            'GREAT_GRANDCHILD': 'CHILD',
             'PARENT': 'CHILD',
             'SIBLING': 'SIBLING',
             'SPOUSE': 'SPOUSE',
             'PARTNER': 'SPOUSE',
-            'NEPHEW_NIECE': 'NEPHEW_NIECE',  # Specific treatment
+            'NEPHEW_NIECE': 'NEPHEW_NIECE',
+            'AUNT_UNCLE': 'RELATIVES_UP_TO_4TH_DEGREE',
+            'COUSIN': 'RELATIVES_UP_TO_4TH_DEGREE',
+            'GREAT_UNCLE_AUNT': 'RELATIVES_UP_TO_4TH_DEGREE',
         }
-        # Normalize to string (handles both HeirRelation enum and string values)
         rel_key = str(effective_relationship.value) if hasattr(effective_relationship, 'value') else str(effective_relationship)
         db_relation = relation_map.get(rel_key, 'OTHER')
-        
-        # DEBUG: Log key values
-        print(f"[DEBUG FISCAL] relationship={relationship}, type={type(relationship)}")
-        print(f"[DEBUG FISCAL] effective_relationship={effective_relationship}")
-        print(f"[DEBUG FISCAL] rel_key={rel_key}, db_relation={db_relation}")
         
         allowance_obj = Allowance.objects.filter(legislation=legislation, relationship=db_relation).first()
         base_allowance = float(allowance_obj.amount) if allowance_obj else 0.0
         
-        # DEBUG: Log allowance result
-        print(f"[DEBUG FISCAL] allowance_obj={allowance_obj}, base_allowance={base_allowance}")
-        
-        # Apply disability allowance (Art. 779 II CGI) - cumulative
+        # Apply disability allowance (Art. 779 II CGI)
         disability_bonus = DISABILITY_ALLOWANCE if is_disabled else 0.0
+        if is_disabled and tracer:
+            tracer.add_decision("INCLUDED", "Abattement Handicap", f"+ {DISABILITY_ALLOWANCE:,.0f}€ (Art. 779 II CGI)")
         
-        # Apply 15-year recall: reduce allowance by amount already used (Art. 784 CGI)
+        # Apply 15-year recall
         remaining_base_allowance = max(0.0, base_allowance - prior_allowance_used)
+        if prior_allowance_used > 0 and tracer:
+            tracer.add_decision("EXCLUDED", "Rappel Fiscal", f"Abattement réduit de {prior_allowance_used:,.0f}€ (Donations < 15 ans).")
+
         total_allowance = remaining_base_allowance + disability_bonus
         
         allowance_name = f"Abattement {db_relation}"
         if prior_allowance_used > 0:
-            allowance_name += f" (- {prior_allowance_used:,.0f}€ rappel fiscal)"
+            allowance_name += f" (- {prior_allowance_used:,.0f}€ rappel)"
         if is_disabled:
-            allowance_name += f" + handicap ({DISABILITY_ALLOWANCE:,.0f}€)"
+            allowance_name += " + handicap"
+
+        if tracer:
+            tracer.add_output("Abattement Total", total_allowance)
 
         # Spouse/Partner exemption
         if relationship in [HeirRelation.SPOUSE, HeirRelation.PARTNER]:
+            if tracer:
+                tracer.add_decision("EXEMPT", "Exonération Totale", "Conjoint/Partenaire (Loi TEPA).")
+                tracer.end_step("Exonéré.")
             details = TaxCalculationDetail(
                 relationship=relationship.value,
                 gross_amount=taxable_amount,
@@ -155,8 +180,11 @@ class FiscalCalculator:
             return 0.0, details
 
         net_taxable = max(0.0, taxable_amount - total_allowance)
+        if tracer:
+            tracer.add_output("Base Net Taxable", net_taxable)
         
         if net_taxable == 0:
+            if tracer: tracer.end_step("Non imposable (couvert par abattement).")
             details = TaxCalculationDetail(
                 relationship=relationship.value,
                 gross_amount=taxable_amount,
@@ -171,24 +199,11 @@ class FiscalCalculator:
         # 2. Apply Tax Scale
         tax = 0.0
         brackets_details = []
-        
         brackets = TaxBracket.objects.filter(legislation=legislation, relationship=db_relation).order_by('min_amount')
         
-        # DEBUG: Log brackets found
-        print(f"[DEBUG FISCAL] TaxBrackets for {db_relation}: {list(brackets.values_list('rate', flat=True))}")
-        
         if not brackets.exists():
-            print(f"[DEBUG FISCAL] NO BRACKETS FOUND for {db_relation}!")
-            details = TaxCalculationDetail(
-                relationship=relationship.value,
-                gross_amount=taxable_amount,
-                allowance_name=allowance_name,
-                allowance_amount=total_allowance,
-                net_taxable=net_taxable,
-                brackets_applied=[],
-                total_tax=0.0
-            )
-            return 0.0, details
+            if tracer: tracer.add_decision("WARNING", f"Aucun barème trouvé pour {db_relation}!")
+            # Logic here falls through to return 0 tax
         
         for bracket in brackets:
             limit = float(bracket.max_amount) if bracket.max_amount else float('inf')
@@ -208,7 +223,18 @@ class FiscalCalculator:
                     taxable_in_bracket=taxable_in_bracket,
                     tax_for_bracket=tax_for_bracket
                 ))
+                if tracer:
+                    limit_str = f"{limit:,.0f}€" if limit != float('inf') else "∞"
+                    tracer.add_decision(
+                        "CALCULATION", 
+                        f"Tranche {rate*100:.1f}%", 
+                        f"Sur {taxable_in_bracket:,.2f}€ ({min_amt:,.0f}€ - {limit_str}) = {tax_for_bracket:,.2f}€"
+                    )
         
+        if tracer:
+            tracer.add_output("Droits à payer", tax)
+            tracer.end_step(f"Droits calculés : {tax:,.2f}€")
+
         details = TaxCalculationDetail(
             relationship=relationship.value,
             gross_amount=taxable_amount,
