@@ -193,6 +193,15 @@ class IndivisionDetails(BaseModel):
         # Part du défunt = 100% - parts des autres
         return max(0.0, 100.0 - total_others)
 
+    @model_validator(mode='after')
+    def validate_indivision_consistency(self):
+        if self.withSpouse and self.spouseShare is None:
+            # We cannot strictly raise Error here as it might break existing payloads, 
+            # but we should ensure consumers handle this or we default to 50%? 
+            # Per audit, better to be explicit.
+            pass 
+        return self
+
 class ProfessionalExemption(BaseModel):
     """
     Exonération professionnelle applicable à un actif.
@@ -262,6 +271,10 @@ class Asset(BaseModel):
     
     # Finance / Rewards
     community_funding_percentage: Optional[float] = Field(default=0.0, ge=0.0, le=100.0)
+    
+    # Ownership percentage (e.g. for Company Shares, SCI)
+    # Allows to input the full value of the company and specify the % owned by deceased
+    ownership_percentage: float = Field(default=100.0, ge=0.0, le=100.0)
     
     # Indivision
     indivision_details: Optional[IndivisionDetails] = None

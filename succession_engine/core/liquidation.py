@@ -94,6 +94,11 @@ class MatrimonialLiquidator:
                 cca_amt = getattr(asset, 'cca_value', 0.0)
                 base_value = asset.estimated_value + cca_amt
                 
+                # Apply Ownership Percentage (e.g. Company Shares)
+                if asset.ownership_percentage < 100.0:
+                    base_value = base_value * (asset.ownership_percentage / 100.0)
+                    liquidation_details.append(f"  • {asset.id}: Valeur pondérée à {asset.ownership_percentage}% ({base_value:,.0f}€)")
+                
                 actual_value = base_value
                 deceased_percentage = 100.0  # Default: 100% owned by deceased (if personal) or 100% of community
                 
@@ -101,6 +106,9 @@ class MatrimonialLiquidator:
                 from succession_engine.schemas import OwnershipMode
                 if asset.ownership_mode == OwnershipMode.INDIVISION and asset.indivision_details:
                     deceased_percentage = asset.indivision_details.get_deceased_share_percentage()
+                    # Indivision share applies to the base value (which might already be weighted if logic allows, 
+                    # but typically Indivision is exclusive of basic ownership percentage. 
+                    # Assuming they don't overlap for V2 consistency).
                     actual_value = base_value * (deceased_percentage / 100.0)
                     liquidation_details.append(f"  • {asset.id}: Part indivise {deceased_percentage}% ({actual_value:,.0f}€)")
                 
