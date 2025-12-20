@@ -62,6 +62,8 @@ class LifeInsuranceCalculator:
                 tracer.start_step(4, "Assurance Vie (990 I)", "Primes versées avant 70 ans")
                 tracer.add_input("Montant Primes < 70", premiums_before_70)
 
+            tax_before_70 = 0.0
+
             allowance_before_70 = LIFE_INSURANCE_ALLOWANCE_BEFORE_70
             taxable_before_70 = max(0, premiums_before_70 - allowance_before_70)
             
