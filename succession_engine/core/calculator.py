@@ -55,15 +55,11 @@ class SuccessionCalculator:
         # STEP 1: Liquidation du régime matrimonial
         net_assets = liquidator.liquidate(input_data, tracer=tracer)
         
-        # STEP 2: Reconstitution de la masse (Rapport civil - Art. 843+ CC)
-        tracer.start_step(
-            step_number=2, 
-            step_name="Reconstitution de la Masse à Partager",
-            description="Calcul de la valeur totale à partager, incluant les biens du défunt et les donations rapportables."
-        )
-        tracer.explain(
-            what="Reconstitution de la 'Masse de Calcul' (Art. 922 CC).",
-            why="On réintègre fictivement les donations passées pour vérifier que chacun reçoit sa part réservataire."
+        # STEP 2: Reconstitution de la masse
+        tracer.start_step_pedagogical(2, "RECONSTITUTION")
+        tracer.record_calculation(
+            description="Reconstitution de la Masse de Calcul (MC)",
+            formula="MC = Actif Net + Donations Rapportables - Dettes"
         )
         
         reportable_donations, reportable_donations_value = get_reportable_donations(input_data.donations)
@@ -169,14 +165,10 @@ class SuccessionCalculator:
              tracer.add_decision("INFO", "Assurance-Vie 757B", f"Réintégration de primes > 70 ans dans la succession: {total_757b:,.2f}€")
 
         # STEP 4: Calculate taxation and build heir breakdown
-        tracer.start_step(
-            step_number=4,
-            step_name="Simulateur Fiscal",
-            description="Calcul des droits de succession à payer pour chaque héritier."
-        )
-        tracer.explain(
-            what="Estimation de l'impôt final.",
-            why="Application du barème fiscal progressif après déduction des abattements personnels."
+        tracer.start_step_pedagogical(4, "FISCAL")
+        tracer.record_calculation(
+            description="Calcul individuel des droits de succession",
+            formula="Droits = (Base Taxable - Abattement) x Taux"
         )
         
         # Phase 10: Calculate Global Professional Exemption (Dutreil / Rural)
@@ -387,13 +379,14 @@ class SuccessionCalculator:
             
             # Trace
             if tracer:
+                 tracer.add_sub_step(f"Calcul pour {heir.id}")
                  details = f"Part reçue: {total_civil_value:,.0f}€"
                  if addback_757b > 0:
-                     details += f" + Assurance-vie (757B): {addback_757b:,.0f}€"
+                     details += f" + AV 757B: {addback_757b:,.0f}€"
                  if heir_exemption_share > 0:
                      details += f" - Exonération Pro: {heir_exemption_share:,.0f}€"
                  
-                 tracer.add_decision("INFO", f"Base Taxable : {heir.id}", details)
+                 tracer.add_sub_step(f"Base taxable déterminée: {details}")
 
             # Calculate 15-year recall: allowance already used by prior declared donations (Art. 784 CGI)
             prior_allowance_used = sum(
@@ -419,10 +412,9 @@ class SuccessionCalculator:
             
             if tracer:
                  if tax > 0:
-                     gst = f"Après abattement de {tax_details.allowance_amount:,.0f}€"
-                     tracer.add_decision("INCLUDED", f"Impôt à payer : {heir.id}", f"{gst} -> Droits: {tax:,.2f}€")
+                     tracer.add_insight("WARNING", f"{heir.id}: Droits de succession estimés à {tax:,.0f}€")
                  else:
-                     tracer.add_decision("INFO", f"Impôt à payer : {heir.id}", "Aucun droit à payer (couvert par l'abattement).")
+                     tracer.add_insight("POSITIVE", f"{heir.id}: Aucuns droits à payer (couvert par l'abattement)")
             
             # Build received_assets list from specific bequests
             from succession_engine.schemas import ReceivedAsset, ExplanationKey

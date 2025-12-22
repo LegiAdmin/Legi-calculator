@@ -185,10 +185,10 @@ class HeirShareCalculator:
         heir_shares = {}
         
         if tracer:
-            tracer.start_step(
-                step_number=3,
-                step_name="Répartition des Parts",
-                description="Calcul des parts revenant à chaque héritier selon la loi et le testament."
+            tracer.start_step_pedagogical(3, "DEVOLUTION")
+            tracer.record_calculation(
+                description="Répartition Reserve / Quotité",
+                formula="Mass Successorale = Réserve + Quotité Disponible"
             )
             tracer.add_input("Actif Net Succession", net_succession_assets)
         

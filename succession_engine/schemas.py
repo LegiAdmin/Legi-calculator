@@ -621,19 +621,48 @@ class CalculationDecision(BaseModel):
     description: str
     reason: Optional[str] = None
 
+class PedagogicalContent(BaseModel):
+    title: str              # Titre utilisateur (ex: "Qui hérite ?")
+    definition: str         # Définition simple
+    why_it_matters: str     # Pourquoi c'est important pour l'utilisateur
+    legal_references: List[str] # Article de loi
+
+class CalculationBlock(BaseModel):
+    description: str        # Ce qui est calculé
+    formula: Optional[str] = None # Formule simplifiée
+    sub_steps: List[str] = Field(default_factory=list) # Liste d'opérations
+
+class InsightType(str, Enum):
+    POSITIVE = "POSITIVE"
+    WARNING = "WARNING"
+    EDUCATIONAL = "EDUCATIONAL"
+
+class KeyInsight(BaseModel):
+    type: InsightType
+    message: str
+
 class CalculationStep(BaseModel):
-    """A step in the calculation process with detailed explicability"""
+    """
+    A step in the calculation process with detailed explicability.
+    Refactored for High-Fidelity UX.
+    """
     step_number: int
-    step_name: str
-    description: str
-    result_summary: str
+    step_id: str # internal ID e.g. "LIQUIDATION"
     
-    # Explicability fields (Backend -> Frontend)
-    what: Optional[str] = None  # Qu'est-ce qu'on fait ? (Business logic)
-    why: Optional[str] = None   # Pourquoi ? (Legal source / Reason)
-    inputs: Dict[str, str] = Field(default_factory=dict)   # Input data used
-    outputs: Dict[str, str] = Field(default_factory=dict)  # Output values produced
-    decisions: List[CalculationDecision] = Field(default_factory=list) # Key decisions made
+    # Pedagogical Layer
+    pedagogy: PedagogicalContent
+    
+    # Technical Layer
+    inputs: Dict[str, str] = Field(default_factory=dict)
+    calculation: CalculationBlock
+    outputs: Dict[str, str] = Field(default_factory=dict)
+    
+    # Insights Layer
+    insights: List[KeyInsight] = Field(default_factory=list)
+    
+    # Legacy fields (kept for compatibility during refactor if needed, but intended to be replaced)
+    # decided to remove them to force update in one go as agreed in plan
+
 
 class AssetBreakdown(BaseModel):
     """Detailed information about an asset"""

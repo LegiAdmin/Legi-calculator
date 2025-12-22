@@ -88,12 +88,7 @@ class FiscalCalculator:
             tuple: (tax_amount: float, details: TaxCalculationDetail)
         """
         if tracer:
-            tracer.start_step(
-                step_number=5, # Typically step 5 in overall flow, or sub-step
-                step_name=f"Calcul Droits - {relationship}",
-                description="Calcul des droits de succession après abattement."
-            )
-            tracer.add_input("Montant Taxable Brut", taxable_amount)
+            tracer.add_sub_step(f"Fiscalité {relationship}: Part brute: {taxable_amount:,.2f}€")
 
         # Fetch active legislation
         try:

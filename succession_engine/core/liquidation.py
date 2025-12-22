@@ -45,18 +45,14 @@ class MatrimonialLiquidator:
         """
         Execute the matrimonial regime liquidation with optional tracing.
         """
+
         if tracer:
-            tracer.start_step(
-                step_number=1,
-                step_name="Patrimoine et Régime Matrimonial",
-                description="Inventaire du patrimoine et séparation des biens selon le régime matrimonial."
+            tracer.start_step_pedagogical(1, "LIQUIDATION")
+            tracer.record_calculation(
+                description="Répartition du patrimoine", 
+                formula="Patrimoine Total = Biens Propres Défunt + 1/2 Communauté"
             )
-            tracer.explain(
-                what=f"Application des règles du régime '{input_data.matrimonial_regime.value}'.",
-                why="Le régime matrimonial définit la propriété des biens (Art. 1400+ CC). Seule la part du défunt entre dans la succession."
-            )
-            tracer.add_input("Régime Matrimonial", input_data.matrimonial_regime.value)
-            tracer.add_input("Date Mariage", str(input_data.marriage_date) if input_data.marriage_date else "Non renseignée")
+            tracer.add_input("Régime", input_data.matrimonial_regime.value)
 
         deceased_assets = 0.0
         spouse_assets = 0.0
@@ -77,11 +73,7 @@ class MatrimonialLiquidator:
                     f"  • {asset.id}: {asset.estimated_value:,.0f}€ (assurance-vie, hors succession)"
                 )
                 if tracer:
-                    tracer.add_decision(
-                        "EXCLUDED", 
-                        f"Assurance-vie ({asset.id})", 
-                        "Hors succession (Art. L132-12 C. Assurances)"
-                    )
+                    tracer.add_sub_step(f"EXCLU: {asset.id} (Assurance-vie hors succession)")
                 continue
             
             try:
@@ -138,7 +130,7 @@ class MatrimonialLiquidator:
                     spouse_assets += actual_value
                     liquidation_details.append(f"  • {asset.id}: Bien propre du conjoint (Exclu)")
                     if tracer:
-                        tracer.add_decision("EXCLUDED", f"{asset.id} (Conjoint)", "Bien propre du conjoint")
+                        tracer.add_sub_step(f"EXCLU: {asset.id} (Bien propre du conjoint)")
                     
                 elif owner == "COMMUNITY":
                     half_value = actual_value / 2
@@ -258,10 +250,9 @@ class MatrimonialLiquidator:
                         excess_advantage = advantage_value - available_quota
                         
                         if tracer:
-                             tracer.add_decision(
+                             tracer.add_insight(
                                 "WARNING",
-                                "Action en Retranchement (Art. 1527 CC)", 
-                                f"Enfants d'un autre lit détectés. Avantage ({advantage_value:,.0f}€) réduit à la QD ({available_quota:,.0f}€). Excès réintégré: {excess_advantage:,.0f}€"
+                                f"Action en Retranchement : Avantage réduit pour protéger les enfants d'un autre lit ({excess_advantage:,.0f}€ réintégrés)"
                              )
                         liquidation_details.append(
                             f"  ⚠️ ACTION EN RETRANCHEMENT (Art 1527 CC): Avantage réduit de {excess_advantage:,.0f}€"
