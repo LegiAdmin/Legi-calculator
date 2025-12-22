@@ -192,15 +192,9 @@ class SuccessionCalculator:
             tracer=tracer
         )
         
-        # Trace tax results for each heir
-        for hb in heirs_breakdown:
-            details_text = f"Part brute: {hb.gross_share_value:,.2f}€ | Abattement: {hb.abatement_used:,.2f}€ | Taxable: {hb.taxable_base:,.2f}€"
-            tracer.add_decision("INFO", f"Fiscalité {hb.id}", details_text)
-            if hb.tax_amount > 0:
-                tracer.add_decision("WARNING", f"Droits {hb.id}", f"A payer: {hb.tax_amount:,.2f}€")
         
+        # Heir blocks are now populated via add_heir_block in _calculate_taxation_and_breakdown
         tracer.add_output("Droits Totaux", total_tax)
-        tracer.end_step(f"Droits totaux à payer: {total_tax:,.2f}€")
 
         # STEP 5: Add Life Insurance Tax Summary to Tracer
         if liquidator.life_insurance_assets and tracer:
@@ -377,17 +371,6 @@ class SuccessionCalculator:
             # Metrics
             actual_percentage = (total_civil_value / net_succession_assets * 100) if net_succession_assets > 0 else 0
             
-            # Trace
-            if tracer:
-                 tracer.add_sub_step(f"Calcul pour {heir.id}")
-                 details = f"Part reçue: {total_civil_value:,.0f}€"
-                 if addback_757b > 0:
-                     details += f" + AV 757B: {addback_757b:,.0f}€"
-                 if heir_exemption_share > 0:
-                     details += f" - Exonération Pro: {heir_exemption_share:,.0f}€"
-                 
-                 tracer.add_sub_step(f"Base taxable déterminée: {details}")
-
             # Calculate 15-year recall: allowance already used by prior declared donations (Art. 784 CGI)
             prior_allowance_used = sum(
                 d['value'] for d in reportable_donations 
@@ -400,21 +383,39 @@ class SuccessionCalculator:
             is_adopted_simple = adoption_type == AdoptionType.SIMPLE
             has_continuous_care = getattr(heir, 'has_received_continuous_care', False)
             
+            # Calculate inheritance tax (no tracer passed - we handle output ourselves now)
             tax, tax_details = FiscalCalculator.calculate_inheritance_tax(
                 total_taxable_value, heir.relationship, 
                 is_disabled=is_disabled,
                 prior_allowance_used=prior_allowance_used,
                 is_adopted_simple=is_adopted_simple,
                 has_continuous_care=has_continuous_care,
-                tracer=tracer
+                tracer=None  # Disable internal tracing - we use add_heir_block instead
             )
             total_tax += tax
             
+            # Trace using Human-First per-heir block
             if tracer:
-                 if tax > 0:
-                     tracer.add_insight("WARNING", f"{heir.id}: Droits de succession estimés à {tax:,.0f}€")
-                 else:
-                     tracer.add_insight("POSITIVE", f"{heir.id}: Aucuns droits à payer (couvert par l'abattement)")
+                # Build bracket details for experts
+                bracket_details = []
+                if tax_details and tax_details.brackets_applied:
+                    for br in tax_details.brackets_applied:
+                        max_str = f"{br.bracket_max:,.0f}€" if br.bracket_max else "∞"
+                        bracket_details.append(
+                            f"{br.rate*100:.0f}% sur {br.taxable_in_bracket:,.0f}€ ({br.bracket_min:,.0f}€ → {max_str}) = {br.tax_for_bracket:,.0f}€"
+                        )
+                
+                # Add per-heir block (Human-First design)
+                tracer.add_heir_block(
+                    heir_id=heir.id,
+                    heir_name=heir.id,  # Could be replaced with actual name if available
+                    relationship=heir.relationship.value,
+                    gross_share=total_civil_value,
+                    abatement=tax_details.allowance_amount if tax_details else 0,
+                    taxable_base=tax_details.net_taxable if tax_details else 0,
+                    tax_amount=tax,
+                    bracket_details=bracket_details
+                )
             
             # Build received_assets list from specific bequests
             from succession_engine.schemas import ReceivedAsset, ExplanationKey

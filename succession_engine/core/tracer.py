@@ -1,10 +1,11 @@
 from typing import List, Dict, Optional, Any
-from succession_engine.schemas import CalculationStep, CalculationDecision, DecisionType
+from succession_engine.schemas import CalculationStep, CalculationDecision, DecisionType, HeirExplicabilityBlock
 
 class BusinessLogicTracer:
     """
     Helper to trace business logic execution for user explicability.
     Collects structured pedagogical steps, calculations, and insights.
+    Human-First Design: per-heir blocks with plain French narratives.
     """
     def __init__(self):
         self.steps: List[CalculationStep] = []
@@ -36,7 +37,8 @@ class BusinessLogicTracer:
             ),
             inputs={},
             outputs={},
-            insights=[]
+            insights=[],
+            heir_blocks=[]
         )
         self.steps.append(self.current_step)
 
@@ -73,6 +75,60 @@ class BusinessLogicTracer:
                 itype = InsightType.EDUCATIONAL
                 
             self.current_step.insights.append(KeyInsight(type=itype, message=message))
+
+    # --- Human-First: Per-Heir Explicability Blocks ---
+
+    def add_heir_block(
+        self,
+        heir_id: str,
+        heir_name: str,
+        relationship: str,
+        gross_share: float,
+        abatement: float,
+        taxable_base: float,
+        tax_amount: float,
+        bracket_details: List[str] = None
+    ) -> None:
+        """
+        Add a self-contained explicability block for one heir's fiscal calculation.
+        Generates a plain French narrative automatically.
+        """
+        if not self.current_step:
+            return
+        
+        # Format values in plain French
+        def fmt(val: float) -> str:
+            return f"{val:,.0f} €".replace(",", " ")
+        
+        gross_str = fmt(gross_share)
+        abat_str = fmt(abatement)
+        tax_str = fmt(taxable_base)
+        result_str = fmt(tax_amount) if tax_amount > 0 else "0 € (exonéré)"
+        
+        # Build plain French narrative
+        if taxable_base > 0:
+            narrative = f"{heir_name} reçoit une part brute de {gross_str}. "
+            narrative += f"Après application de l'abattement de {abat_str}, "
+            narrative += f"une part de {tax_str} est soumise au barème progressif. "
+            narrative += f"Droits à payer : {fmt(tax_amount)}."
+        else:
+            narrative = f"{heir_name} reçoit une part brute de {gross_str}. "
+            narrative += f"L'abattement de {abat_str} couvre l'intégralité de sa part. "
+            narrative += "Aucun droit de succession à payer."
+        
+        block = HeirExplicabilityBlock(
+            heir_id=heir_id,
+            heir_name=heir_name,
+            relationship=relationship,
+            gross_share=gross_str,
+            abatement=abat_str,
+            taxable_base=tax_str,
+            narrative=narrative,
+            tax_result=result_str,
+            bracket_details=bracket_details or []
+        )
+        
+        self.current_step.heir_blocks.append(block)
 
     # --- Legacy methods adapted to new schema ---
 

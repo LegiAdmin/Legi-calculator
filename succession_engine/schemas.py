@@ -660,8 +660,32 @@ class CalculationStep(BaseModel):
     # Insights Layer
     insights: List[KeyInsight] = Field(default_factory=list)
     
-    # Legacy fields (kept for compatibility during refactor if needed, but intended to be replaced)
-    # decided to remove them to force update in one go as agreed in plan
+    # Per-Heir Breakdown (for FISCAL step - Human-First design)
+    heir_blocks: List['HeirExplicabilityBlock'] = Field(default_factory=list)
+
+
+class HeirExplicabilityBlock(BaseModel):
+    """
+    Self-contained explicability block for one heir's fiscal calculation.
+    Designed for Human-First clarity.
+    """
+    heir_id: str
+    heir_name: str
+    relationship: str
+    
+    # What they receive (inputs)
+    gross_share: str  # "200 000 €"
+    abatement: str    # "100 000 €"
+    taxable_base: str # "100 000 €"
+    
+    # Plain French explanation of the calculation
+    narrative: str
+    
+    # Final result
+    tax_result: str   # "18 194 €" or "0 € (exonéré)"
+    
+    # Optional: detailed bracket breakdown (for experts)
+    bracket_details: List[str] = Field(default_factory=list)
 
 
 class AssetBreakdown(BaseModel):
