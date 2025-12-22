@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur Succession - V2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .card-hover {
+            transition: all 0.2s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 min-h-screen text-slate-800">
+
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🏛️</span>
+                <h1 class="font-bold text-xl tracking-tight text-slate-900">Succession<span
+                        class="text-indigo-600">Planner</span></h1>
+            </div>
+            <div class="text-sm text-gray-500">Mode Expert</div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-12 gap-8">
+
+        <!-- Left Panel: Input & Scenarios -->
+        <div class="col-span-12 lg:col-span-4 space-y-6">
+
+            <!-- Scenarios Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-semibold text-slate-700">Scénarios</h2>
+                    <div class="flex bg-slate-100 rounded-lg p-1">
+                        <button id="tabSavedBtn"
+                            class="px-3 py-1 text-xs font-semibold rounded-md bg-white shadow-sm text-slate-700">Sauvegardés</button>
+                        <button id="tabGoldenBtn"
+                            class="px-3 py-1 text-xs font-semibold rounded-md text-slate-500 hover:text-slate-700">Golden
+                            Tests</button>
+                    </div>
+                </div>
+
+                <!-- Saved List -->
+                <div id="tabSavedContent" class="h-64 overflow-y-auto space-y-2 pr-2">
+                    <div id="savedScenarioList" class="text-sm text-slate-500 italic text-center py-4">Chargement...
+                    </div>
+                </div>
+
+                <!-- Golden List -->
+                <div id="tabGoldenContent" class="hidden h-64 overflow-y-auto space-y-2 pr-2">
+                    <button id="runAllTestsBtn"
+                        class="w-full mb-3 bg-indigo-50 text-indigo-700 text-xs font-bold py-2 rounded-lg hover:bg-indigo-100 transition">
+                        ▶ Lancer les tests
+                    </button>
+                    <div id="goldenScenarioList" class="text-sm text-slate-500 italic text-center py-4">Sélectionnez
+                        pour charger</div>
+                </div>
+            </div>
+
+            <!-- Input Editor -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col h-[600px]">
+                <h2 class="font-semibold text-slate-700 mb-4 flex justify-between">
+                    <span>Données JSON</span>
+                    <button id="formatJsonBtn" class="text-xs text-indigo-600 hover:underline">Formater</button>
+                </h2>
+                <textarea id="jsonInput"
+                    class="flex-1 w-full p-3 font-mono text-xs bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
+                    spellcheck="false"></textarea>
+
+                <button id="simulateBtn"
+                    class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg shadow-lg shadow-indigo-200 transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                    <span>🚀 Lancer la simulation</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Panel: Results -->
+        <div class="col-span-12 lg:col-span-8 space-y-8">
+
+            <!-- Empty State -->
+            <div id="emptyState"
+                class="h-full flex flex-col items-center justify-center text-center p-12 bg-white rounded-xl border border-dashed border-slate-300">
+                <div class="bg-indigo-50 p-4 rounded-full mb-4">
+                    <span class="text-4xl">👋</span>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800 mb-2">Prêt à simuler une succession</h3>
+                <p class="text-slate-500 max-w-md">Sélectionnez un scénario à gauche ou collez votre JSON pour voir
+                    apparaître l'analyse détaillée étape par étape.</p>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="hidden h-full flex flex-col items-center justify-center p-12">
+                <div class="animate-spin text-4xl mb-4">⚙️</div>
+                <p class="text-slate-500 font-medium">Le notaire numérique réfléchit...</p>
+            </div>
+
+            <!-- Results Content -->
+            <div id="resultsContent" class="hidden space-y-8 animate-fade-in">
+
+                <!-- Global Metrics Cards -->
+                <div class="grid grid-cols-4 gap-4">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Masse
+                            Successorale</div>
+                        <div id="metricEstate" class="text-2xl font-bold text-slate-800">--</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Réserve
+                            Héréditaire</div>
+                        <div id="metricReserve" class="text-2xl font-bold text-blue-600">--</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Quotité
+                            Disponible</div>
+                        <div id="metricQuota" class="text-2xl font-bold text-purple-600">--</div>
+                    </div>
+                    <div class="bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-800 text-white">
+                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Droits Totaux
+                        </div>
+                        <div id="metricTax" class="text-2xl font-bold text-emerald-400">--</div>
+                    </div>
+                </div>
+
+                <!-- Warnings Banner -->
+                <div id="warningsBanner" class="hidden bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg">
+                    <div class="flex items-start gap-3">
+                        <span class="text-amber-600 mt-0.5">⚠️</span>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-amber-800 text-sm">Points d'attention</h3>
+                            <div id="warningsList" class="mt-1 text-sm text-amber-700 space-y-1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Journey Steps (The Core Experience) -->
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <span
+                            class="bg-indigo-100 text-indigo-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
+                        Comprendre le Calcul
+                    </h3>
+                    <div id="stepsContainer" class="space-y-6">
+                        <!-- Dynamic Steps will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Heirs Breakdown (The Final Bill) -->
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <span
+                            class="bg-indigo-100 text-indigo-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
+                        Répartition & Fiscalité
+                    </h3>
+                    <div id="heirsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Dynamic Heirs will be injected here -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- JS Logic -->
+    <script>
+        // Store scenarios and state
+        let currentInput = {};
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSavedScenarios();
+        });
+
+        // Tab Switching
+        const tabSavedBtn = document.getElementById('tabSavedBtn');
+        const tabGoldenBtn = document.getElementById('tabGoldenBtn');
+        const tabSavedContent = document.getElementById('tabSavedContent');
+        const tabGoldenContent = document.getElementById('tabGoldenContent');
+
+        tabSavedBtn.addEventListener('click', () => {
+            tabSavedContent.classList.remove('hidden'); tabGoldenContent.classList.add('hidden');
+            tabSavedBtn.classList.replace('bg-white', 'bg-slate-100'); tabSavedBtn.classList.replace('text-slate-500', 'text-slate-700'); // Hacky style toggle
+        });
+        tabGoldenBtn.addEventListener('click', () => {
+            tabSavedContent.classList.add('hidden'); tabGoldenContent.classList.remove('hidden');
+        });
+
+        // Load Scenarios
+        async function loadSavedScenarios() {
+            // Reusing existing logic from previous file roughly
+            try {
+                const res = await fetch('/api/v1/scenarios/');
+                const scenarios = await res.json();
+                const list = document.getElementById('savedScenarioList');
+                if (scenarios.length === 0) list.innerHTML = '<div class="text-center text-xs text-gray-400 py-4">Vide</div>';
+                else {
+                    list.innerHTML = scenarios.map(s => `
+                        <div class="group p-3 rounded-lg border border-slate-100 bg-white hover:border-indigo-300 hover:bg-indigo-50 cursor-pointer transition"
+                             onclick='loadInput(${JSON.stringify(s.input_data)})'>
+                            <div class="font-medium text-slate-700 text-xs group-hover:text-indigo-700">${s.name}</div>
+                            <div class="text-[10px] text-slate-400">${new Date(s.created_at).toLocaleDateString()}</div>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // Golden Scenarios Loader
+        document.getElementById('runAllTestsBtn').addEventListener('click', async () => {
+            const res = await fetch('/static/tests/golden_scenarios.json');
+            const data = await res.json();
+            const list = document.getElementById('goldenScenarioList');
+            list.innerHTML = data.scenarios.map(s => `
+                <div class="group p-3 rounded-lg border border-slate-100 bg-white hover:border-purple-300 hover:bg-purple-50 cursor-pointer transition mb-2"
+                     onclick='loadInput(${JSON.stringify(s.input)})'>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs">🧪</span>
+                        <div class="font-medium text-slate-700 text-xs group-hover:text-purple-700 truncate">${s.name}</div>
+                    </div>
+                </div>
+             `).join('');
+        });
+
+        function loadInput(data) {
+            document.getElementById('jsonInput').value = JSON.stringify(data, null, 2);
+        }
+
+        // Simulation
+        document.getElementById('simulateBtn').addEventListener('click', async () => {
+            const jsonVal = document.getElementById('jsonInput').value;
+            if (!jsonVal) return;
+
+            // UI State: Loading
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('resultsContent').classList.add('hidden');
+            document.getElementById('loadingState').classList.remove('hidden');
+
+            try {
+                const res = await fetch('/api/v1/simulate/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: jsonVal
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    renderResults(data);
+                } else {
+                    alert("Erreur API: " + JSON.stringify(data));
+                }
+            } catch (e) {
+                alert("Erreur JS: " + e.message);
+            } finally {
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('resultsContent').classList.remove('hidden');
+            }
+        });
+
+        // --- RENDER LOGIC (The New Part) ---
+
+        function renderResults(data) {
+            // 1. Global Metrics
+            document.getElementById('metricEstate').textContent = formatCurrency(data.global_metrics.total_estate_value);
+            document.getElementById('metricReserve').textContent = formatCurrency(data.global_metrics.legal_reserve_value);
+            document.getElementById('metricQuota').textContent = formatCurrency(data.global_metrics.disposable_quota_value);
+            document.getElementById('metricTax').textContent = formatCurrency(data.global_metrics.total_tax_amount);
+
+            // 2. Warnings
+            const warningsList = document.getElementById('warningsList');
+            const warningsBanner = document.getElementById('warningsBanner');
+            if (data.warnings && data.warnings.length > 0) {
+                warningsBanner.classList.remove('hidden');
+                warningsList.innerHTML = data.warnings.map(w => `<div>• ${w}</div>`).join('');
+            } else {
+                warningsBanner.classList.add('hidden');
+            }
+
+            // 3. Journey Steps (Pedagogical Cards)
+            const stepsContainer = document.getElementById('stepsContainer');
+            stepsContainer.innerHTML = data.calculation_steps.map(step => renderStepCard(step)).join('');
+
+            // 4. Heirs Breakdown
+            const heirsContainer = document.getElementById('heirsContainer');
+            heirsContainer.innerHTML = data.heirs_breakdown.map(heir => renderHeirCard(heir)).join('');
+        }
+
+        function renderStepCard(step) {
+            // Colors based on step ID
+            const colorMap = {
+                'LIQUIDATION': 'blue',
+                'RECONSTITUTION': 'indigo',
+                'DEVOLUTION': 'purple',
+                'FISCAL': 'emerald'
+            };
+            const color = colorMap[step.step_id] || 'gray';
+
+            // Safe accessors for new schema
+            const title = step.pedagogy?.title || step.step_name || 'Étape';
+            const definition = step.pedagogy?.definition || '';
+            const why = step.pedagogy?.why_it_matters || '';
+            const calcDesc = step.calculation?.description || step.description || '';
+            const formula = step.calculation?.formula || '';
+            const subSteps = step.calculation?.sub_steps || [];
+
+            // Build Insights HTML
+            const insightsHtml = (step.insights || []).map(insight => {
+                const iColor = insight.type === 'POSITIVE' ? 'green' : insight.type === 'WARNING' ? 'amber' : 'blue';
+                const iIcon = insight.type === 'POSITIVE' ? '✅' : insight.type === 'WARNING' ? '⚠️' : 'ℹ️';
+                return `
+                    <div class="flex gap-2 items-start text-xs bg-${iColor}-50 text-${iColor}-800 p-2 rounded border border-${iColor}-200 mt-2">
+                        <span>${iIcon}</span>
+                        <span>${insight.message}</span>
+                    </div>
+                 `;
+            }).join('');
+
+            return `
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden card-hover">
+                    <!-- Header: Pedagogy -->
+                    <div class="bg-slate-50 border-b border-slate-100 p-4">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="bg-${color}-100 text-${color}-700 text-xs font-bold px-2 py-1 rounded uppercase tracking-wide">Étape ${step.step_number}</span>
+                            <h3 class="font-bold text-slate-800 text-lg">${title}</h3>
+                        </div>
+                        <p class="text-sm text-slate-600 mb-1"><strong>C'est quoi ?</strong> ${definition}</p>
+                        <p class="text-sm text-slate-500 italic">💡 ${why}</p>
+                    </div>
+
+                    <!-- Body: Calculation -->
+                    <div class="p-4">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <div class="text-xs font-semibold text-slate-400 uppercase">Calcul</div>
+                                <div class="font-medium text-slate-800">${calcDesc}</div>
+                            </div>
+                            ${formula ? `<div class="bg-slate-100 px-2 py-1 rounded text-xs font-mono text-slate-600">${formula}</div>` : ''}
+                        </div>
+
+                        <!-- Sub-steps / Decisions (Log) -->
+                        <div class="space-y-1 pl-3 border-l-2 border-slate-200 my-4">
+                            ${subSteps.map(s => `<div class="text-xs text-slate-600 py-0.5">• ${s}</div>`).join('')}
+                        </div>
+
+                        <!-- Insights -->
+                        <div class="space-y-1">
+                            ${insightsHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderHeirCard(heir) {
+            return `
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden relative">
+                    <div class="absolute top-0 right-0 p-3">
+                         <span class="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded">${heir.relationship}</span>
+                    </div>
+                    
+                    <div class="p-5 border-b border-slate-100 text-center">
+                        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-xl mx-auto mb-3">👤</div>
+                        <h3 class="font-bold text-lg text-slate-900">${heir.name}</h3>
+                        <div class="text-sm text-slate-500">Part théorique: ${heir.legal_share_percent.toFixed(0)}%</div>
+                    </div>
+
+                    <div class="p-5 space-y-3 text-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-500">Part brute reçue</span>
+                            <span class="font-semibold text-slate-900">${formatCurrency(heir.gross_share_value)}</span>
+                        </div>
+                         <div class="flex justify-between items-center text-emerald-600">
+                            <span>Abattements</span>
+                            <span>- ${formatCurrency(heir.abatement_used)}</span>
+                        </div>
+                         <div class="flex justify-between items-center pt-2 border-t border-slate-100">
+                            <span class="text-slate-500">Base Taxable</span>
+                            <span class="font-medium text-slate-900">${formatCurrency(heir.taxable_base)}</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-50 p-2 rounded text-red-600 font-bold">
+                            <span>Impôt à payer</span>
+                            <span>${formatCurrency(heir.tax_amount)}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-lg font-bold text-slate-900 pt-2">
+                            <span>Net perçu</span>
+                            <span>${formatCurrency(heir.net_share_value)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+    </script>
+</body>
+
+</html>
