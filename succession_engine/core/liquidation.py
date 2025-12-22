@@ -48,8 +48,8 @@ class MatrimonialLiquidator:
         if tracer:
             tracer.start_step(
                 step_number=1,
-                step_name="Liquidation du régime matrimonial",
-                description="Séparation des biens entre le défunt et le conjoint survivant."
+                step_name="Patrimoine et Régime Matrimonial",
+                description="Inventaire du patrimoine et séparation des biens selon le régime matrimonial."
             )
             tracer.explain(
                 what=f"Application des règles du régime '{input_data.matrimonial_regime.value}'.",

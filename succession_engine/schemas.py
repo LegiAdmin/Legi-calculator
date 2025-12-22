@@ -579,6 +579,7 @@ class HeirBreakdown(BaseModel):
     name: str
     relationship: HeirRelation  # Ajout pour conformité frontend/tests
     legal_share_percent: float
+    effective_share_percent: Optional[float] = None
     gross_share_value: float
     taxable_base: float
     abatement_used: float

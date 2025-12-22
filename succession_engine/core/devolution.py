@@ -187,8 +187,8 @@ class HeirShareCalculator:
         if tracer:
             tracer.start_step(
                 step_number=3,
-                step_name="Détermination de la dévolution",
-                description="Calcul des parts héritées selon la loi et les volontés (testament)."
+                step_name="Répartition des Parts",
+                description="Calcul des parts revenant à chaque héritier selon la loi et le testament."
             )
             tracer.add_input("Actif Net Succession", net_succession_assets)
         

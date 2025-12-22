@@ -58,12 +58,12 @@ class SuccessionCalculator:
         # STEP 2: Reconstitution de la masse (Rapport civil - Art. 843+ CC)
         tracer.start_step(
             step_number=2, 
-            step_name="Reconstitution de la masse successorale",
-            description="Reconstitution de la masse de calcul en réintégrant les donations antérieures et en déduisant les dettes."
+            step_name="Reconstitution de la Masse à Partager",
+            description="Calcul de la valeur totale à partager, incluant les biens du défunt et les donations rapportables."
         )
         tracer.explain(
-            what="Calcul de la 'Masse de Calcul' (Art. 922 CC).",
-            why="Pour vérifier la réserve héréditaire, on doit tenir compte de tout ce que le défunt a donné de son vivant."
+            what="Reconstitution de la 'Masse de Calcul' (Art. 922 CC).",
+            why="On réintègre fictivement les donations passées pour vérifier que chacun reçoit sa part réservataire."
         )
         
         reportable_donations, reportable_donations_value = get_reportable_donations(input_data.donations)
@@ -171,12 +171,12 @@ class SuccessionCalculator:
         # STEP 4: Calculate taxation and build heir breakdown
         tracer.start_step(
             step_number=4,
-            step_name="Calcul des droits de succession",
-            description="Application des abattements et du barème fiscal pour chaque héritier."
+            step_name="Simulateur Fiscal",
+            description="Calcul des droits de succession à payer pour chaque héritier."
         )
         tracer.explain(
-            what="Calcul de l'impôt sur la part reçue.",
-            why="Les droits de succession sont calculés sur la part nette taxable après abattement (Art. 777+ CGI)."
+            what="Estimation de l'impôt final.",
+            why="Application du barème fiscal progressif après déduction des abattements personnels."
         )
         
         # Phase 10: Calculate Global Professional Exemption (Dutreil / Rural)
@@ -387,12 +387,13 @@ class SuccessionCalculator:
             
             # Trace
             if tracer:
-                 details = f"Part Nette Civile: {total_civil_value:,.0f}€"
+                 details = f"Part reçue: {total_civil_value:,.0f}€"
                  if addback_757b > 0:
-                     details += f" + AV 757B: {addback_757b:,.0f}€"
+                     details += f" + Assurance-vie (757B): {addback_757b:,.0f}€"
                  if heir_exemption_share > 0:
-                     details += f" - Exon. Pro: {heir_exemption_share:,.0f}€"
-                 tracer.add_decision("INFO", f"Base Taxable {heir.id}", details)
+                     details += f" - Exonération Pro: {heir_exemption_share:,.0f}€"
+                 
+                 tracer.add_decision("INFO", f"Base Taxable : {heir.id}", details)
 
             # Calculate 15-year recall: allowance already used by prior declared donations (Art. 784 CGI)
             prior_allowance_used = sum(
@@ -416,8 +417,12 @@ class SuccessionCalculator:
             )
             total_tax += tax
             
-            if tracer and tax > 0:
-                 tracer.add_decision("INCLUDED", f"Taxation {heir.id}", f"Droits: {tax:,.2f}€")
+            if tracer:
+                 if tax > 0:
+                     gst = f"Après abattement de {tax_details.allowance_amount:,.0f}€"
+                     tracer.add_decision("INCLUDED", f"Impôt à payer : {heir.id}", f"{gst} -> Droits: {tax:,.2f}€")
+                 else:
+                     tracer.add_decision("INFO", f"Impôt à payer : {heir.id}", "Aucun droit à payer (couvert par l'abattement).")
             
             # Build received_assets list from specific bequests
             from succession_engine.schemas import ReceivedAsset, ExplanationKey
@@ -495,6 +500,7 @@ class SuccessionCalculator:
                 name=heir.id,
                 relationship=heir.relationship,
                 legal_share_percent=share_percent * 100,
+                effective_share_percent=actual_percentage,
                 gross_share_value=total_civil_value,
                 taxable_base=tax_details.net_taxable,
                 abatement_used=tax_details.allowance_amount,
