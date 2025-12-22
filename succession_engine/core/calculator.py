@@ -41,7 +41,7 @@ class SuccessionCalculator:
         """
         Execute the complete succession calculation.
         """
-        calculation_steps = []
+
         alert_manager = AlertManager()
         
         # Initialize Tracer for Explicability (Phase 9)
@@ -108,12 +108,12 @@ class SuccessionCalculator:
                 for rw in return_warnings:
                     alert_manager.add_legal_warning(rw, audience=AlertAudience.NOTARY)
             
-            calculation_steps.append(CalculationStep(
-                step_number=2, # sub-step
-                step_name="Application Droit de Retour (Art. 738-2 CC)",
-                description="Les biens reçus par donation d'ascendants retournent à ces derniers (en l'absence de descendants).",
-                result_summary=f"Valeur retournée: {total_return:,.2f}€. Nouvelle masse: {net_succession_assets:,.2f}€"
-            ))
+            tracer.record_calculation(
+                description="Application Droit de Retour (Art. 738-2 CC)",
+                formula="Masse = Masse - Retour Légal"
+            )
+            tracer.add_sub_step(f"Les biens reçus par donation d'ascendants retournent à ces derniers.")
+            tracer.add_insight("WARNING", f"Droit de retour exercé: {total_return:,.2f}€ retirés de la masse.")
 
         # STEP 3: Détermination de la dévolution (Réserve & Quotité)
         heirs = input_data.members
