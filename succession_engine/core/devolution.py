@@ -363,6 +363,9 @@ class HeirShareCalculator:
             self.bare_ownership_value = 0.0
             self.usufruct_rate = 1.0
         
+        # Fix 5: Add usufruit/nue-propriété specifics to tracer
+        # Note: tracer is not directly available here but will be added via calculate() parent
+        
         return heir_shares
     
     def _apply_quarter_ownership(self, spouse, children: List) -> Dict[str, float]:

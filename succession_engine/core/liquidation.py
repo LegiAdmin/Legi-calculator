@@ -53,6 +53,9 @@ class MatrimonialLiquidator:
                 formula="Patrimoine Total = Biens Propres Défunt + 1/2 Communauté"
             )
             tracer.add_input("Régime", input_data.matrimonial_regime.value)
+            # Calculate and show total declared for clarity
+            total_declared = sum(a.estimated_value for a in input_data.assets)
+            tracer.add_input("Total déclaré", f"{total_declared:,.0f} €")
 
         deceased_assets = 0.0
         spouse_assets = 0.0

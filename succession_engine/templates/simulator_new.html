@@ -401,9 +401,12 @@
 
                         <!-- Sub-steps / Decisions (Log) - Hide if we have heir blocks -->
                         ${subSteps.length > 0 && heirBlocks.length === 0 ? `
-                            <div class="space-y-1 pl-3 border-l-2 border-slate-200 my-4">
-                                ${subSteps.map(s => `<div class="text-xs text-slate-600 py-0.5">• ${s}</div>`).join('')}
-                            </div>
+                            <details class="my-4">
+                                <summary class="text-xs font-semibold text-slate-500 cursor-pointer hover:text-indigo-600">📋 Voir le détail des opérations (${subSteps.length})</summary>
+                                <div class="space-y-1 pl-3 border-l-2 border-slate-200 mt-2">
+                                    ${subSteps.map(s => `<div class="text-xs text-slate-600 py-0.5">• ${s}</div>`).join('')}
+                                </div>
+                            </details>
                         ` : ''}
 
                         <!-- Per-Heir Blocks (Human-First Design) -->

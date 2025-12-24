@@ -134,10 +134,24 @@ class SuccessionCalculator:
         legal_reserve = mass_art_922 * reserve_fraction
         disposable_quota = mass_art_922 - legal_reserve
         
+        # Fix 2: Add concrete values to Step 3 tracer
+        if tracer:
+            tracer.add_sub_step(reserve_description)
+            tracer.add_output("Réserve Héréditaire", f"{legal_reserve:,.0f} € ({reserve_fraction*100:.0f}%)")
+            tracer.add_output("Quotité Disponible", f"{disposable_quota:,.0f} €")
+        
         # Handle specific bequests
         specific_bequests_info, bequests_total_value, bequest_warnings = process_specific_bequests(
             input_data.assets, input_data.wishes, heirs
         )
+        
+        # Fix 4: Add bequest trace showing who receives what
+        if tracer and specific_bequests_info:
+            for bequest in specific_bequests_info:
+                tracer.add_sub_step(
+                    f"📜 Leg particulier: {bequest['asset_name']} → {bequest['beneficiary_id']} "
+                    f"({bequest['share_percentage']:.0f}% = {bequest['value']:,.0f} €)"
+                )
         
         # Add bequest over-allocation warnings
         for bw in bequest_warnings:
@@ -145,6 +159,16 @@ class SuccessionCalculator:
         
         # Calculate heir shares (Instrumented)
         heir_shares = share_calculator.calculate(heirs, input_data.wishes, net_succession_assets, tracer=tracer)
+        
+        # Fix 5: Add usufruit/nue-propriété specifics to tracer
+        if tracer and share_calculator.spouse_has_usufruct:
+            tracer.add_sub_step(
+                f"📊 Option conjoint: Usufruit ({share_calculator.usufruct_rate*100:.0f}%) = {share_calculator.usufruct_value:,.0f} €"
+            )
+            if share_calculator.bare_ownership_value > 0:
+                tracer.add_sub_step(
+                    f"📊 Nue-propriété (enfants) = {share_calculator.bare_ownership_value:,.0f} €"
+                )
         
         # Check for excessive liberalities (Art. 920+ CC - Réduction)
         # We compare ALL donations (reunion_value) + Bequests vs QD

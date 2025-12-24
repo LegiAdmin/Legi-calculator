@@ -105,8 +105,17 @@ class BusinessLogicTracer:
         tax_str = fmt(taxable_base)
         result_str = fmt(tax_amount) if tax_amount > 0 else "0 € (exonéré)"
         
-        # Build plain French narrative
-        if taxable_base > 0:
+        # Fix 3: Special handling for spouse exoneration
+        is_spouse = relationship.upper() in ["SPOUSE", "PARTNER"]
+        
+        if is_spouse:
+            # Spouse is fully exempt (Art. 796-0 bis CGI)
+            abat_str = "Exonération totale"
+            narrative = f"{heir_name} est exonéré(e) de droits de succession en tant que conjoint survivant (Art. 796-0 bis CGI). "
+            narrative += f"Part reçue : {gross_str}. Aucun impôt."
+            result_str = "0 € (conjoint exonéré)"
+        elif taxable_base > 0:
+            # Build plain French narrative
             narrative = f"{heir_name} reçoit une part brute de {gross_str}. "
             narrative += f"Après application de l'abattement de {abat_str}, "
             narrative += f"une part de {tax_str} est soumise au barème progressif. "
